@@ -1,10 +1,10 @@
-# ARM Semihosting
+# POSIX Architecture
 
 An xPack with POSIX architecture specific files.
 
 ## Package
 
-[ARM Semihosting](https://github.com/micro-os-plus/posix-arch) package details:
+[POSIX Architecture](https://github.com/micro-os-plus/posix-arch) package details:
 
 * type: [xcdl](http://xcdl.github.io)
 * yotta name: `ilg-posix-arch`

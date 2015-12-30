@@ -1,7 +1,7 @@
 {
 	"$schema": "http://xcdl.github.io/schemas/xpack-1-1.json",
 	"name": "ilg-posix-arch",
-	"title": "ARM Semihosting",
+	"title": "POSIX Architecture",
 	"description": "An xPack with POSIX architecture specific files.",
 	"xcdlFile": ".xcdl.json",
 	"repository": 
