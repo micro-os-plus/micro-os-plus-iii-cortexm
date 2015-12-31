@@ -19,25 +19,35 @@
 #if defined(TRACE)
 
 #include "diag/trace.h"
+#include <cstddef>
 #include <unistd.h>
 
 // ----------------------------------------------------------------------------
 
-void
-trace_initialize (void)
+namespace os
 {
-  ; // For POSIX no inits are required.
-}
+  namespace trace
+  {
+    // ------------------------------------------------------------------------
 
-// ----------------------------------------------------------------------------
+    void
+    initialize (void)
+    {
+      ; // For POSIX no inits are required.
+    }
 
-ssize_t
-trace_write (const char* buf, size_t nbyte)
-{
-  return write (1, buf, nbyte); // Forward to STDOUT.
-}
+    // ------------------------------------------------------------------------
 
-#endif // defined(TRACE)
+    ssize_t
+    write (const char* buf, size_t nbyte)
+    {
+      return ::write (1, buf, nbyte); // Forward to STDOUT.
+    }
+
+  } /* namespace trace */
+} /* namespace os */
+
+#endif /* defined(TRACE) */
 
 // ----------------------------------------------------------------------------
 

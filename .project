@@ -24,4 +24,11 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>src/diag/trace.cpp</name>
+			<type>1</type>
+			<location>/Users/ilg/My Files/MacBookPro Projects/uOS/micro-os-plus-iiie.git/ilg/portable/diag-trace-xpack/src/diag/trace.cpp</location>
+		</link>
+	</linkedResources>
 </projectDescription>
