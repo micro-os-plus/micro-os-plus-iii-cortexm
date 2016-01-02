@@ -39,7 +39,7 @@ namespace os
     // ------------------------------------------------------------------------
 
     ssize_t
-    write (const char* buf, size_t nbyte)
+    write (const void* buf, size_t nbyte)
     {
       return ::write (1, buf, nbyte); // Forward to STDOUT.
     }
