@@ -33,6 +33,8 @@
 // Better be the last, to undef putchar()
 #include <cmsis-plus/diag/trace.h>
 
+#include <cmsis-plus/iso/malloc.h>
+
 uint32_t signal_nesting;
 
 namespace os
@@ -54,7 +56,8 @@ namespace os
         {
           memset (&context->port_, 0, sizeof(context->port_));
 
-          ucontext_t* ctx = (ucontext_t*) &(context->port_.ucontext);
+          ucontext_t* ctx =
+              reinterpret_cast<ucontext_t*> (&(context->port_.ucontext));
           trace::printf ("%s() getcontext %p\n", __func__, ctx);
           if (getcontext (ctx) != 0)
             {
@@ -71,12 +74,12 @@ namespace os
           ctx->uc_link = 0;
 
           // Configure the new stack to default values.
-          ctx->uc_stack.ss_sp = malloc (SIGSTKSZ);
+          ctx->uc_stack.ss_sp = estd::malloc (SIGSTKSZ);
           ctx->uc_stack.ss_size = SIGSTKSZ;
           ctx->uc_stack.ss_flags = 0;
 
           trace::printf ("%s() makecontext %p\n", __func__, ctx);
-          makecontext (ctx, (func_t) func, 1, args);
+          makecontext (ctx, reinterpret_cast<func_t> (func), 1, args);
 
           // context->port_.saved = false;
         }
@@ -99,12 +102,12 @@ namespace os
           // The idea to inline functions does not work, since
           // the compiler does not inline functions with context calls.
 
-#if 1
           if (save)
             {
-              if (rtos::scheduler::locked()){
+              if (rtos::scheduler::locked ())
+                {
                   return;
-              }
+                }
 
               rtos::Thread* old_thread;
               ucontext_t* old_ctx;
@@ -120,12 +123,12 @@ namespace os
                     }
 
                   old_ctx =
-                      (ucontext_t*) &old_thread->context ()->port_.ucontext;
+                      reinterpret_cast<ucontext_t*> (&old_thread->context ().port_.ucontext);
                   // Select the top priority thread
                   rtos::scheduler::current_thread_ =
                       rtos::scheduler::ready_threads_list_.remove_top ();
                   new_ctx =
-                      (ucontext_t*) &rtos::scheduler::current_thread_->context ()->port_.ucontext;
+                      reinterpret_cast<ucontext_t*> (&rtos::scheduler::current_thread_->context ().port_.ucontext);
                 }
 
               if (old_ctx != new_ctx)
@@ -159,7 +162,7 @@ namespace os
                   rtos::scheduler::current_thread_ =
                       rtos::scheduler::ready_threads_list_.remove_top ();
 
-                  context = rtos::scheduler::current_thread_->context ();
+                  context = &(rtos::scheduler::current_thread_->context ());
                 }
 
               trace::printf ("%s() setcontext %p %s\n", __func__,
@@ -167,7 +170,8 @@ namespace os
                              rtos::scheduler::current_thread_->name ());
 
               // context->port_.saved = false;
-              ucontext_t* ctx = (ucontext_t*) &context->port_.ucontext;
+              ucontext_t* ctx =
+                  reinterpret_cast<ucontext_t*> (&context->port_.ucontext);
               if (setcontext (ctx) != 0)
                 {
                   trace::printf ("%s() setcontext failed with %s\n", __func__,
@@ -175,55 +179,6 @@ namespace os
                   abort ();
                 }
             }
-#else
-          rtos::thread::Context* context;
-          if (save)
-            {
-              context = rtos::scheduler::current_thread_->context ();
-
-              context->port_.saved = true;
-
-//              trace::printf ("%s() get ctx %p\n", __func__,
-//                             &context->port_.ucontext);
-
-              if (getcontext (&context->port_.ucontext) != 0)
-                {
-                  trace::printf ("%s() getcontext failed with %s\n", __func__,
-                      strerror (errno));
-                  abort ();
-                }
-
-              trace::printf ("%s() ctx %p %s %s\n", __func__,
-                  &context->port_.ucontext,
-                  context->port_.saved ? "saved" : "restored",
-                  rtos::scheduler::current_thread_->name ());
-              // Set to false by restore()
-
-              if (!context->port_.saved)
-                {
-                  return;
-                }
-            }
-
-          // Select the top priority thread
-          rtos::scheduler::current_thread_ =
-          rtos::scheduler::ready_threads_list_.remove_top ();
-
-          context = rtos::scheduler::current_thread_->context ();
-
-          trace::printf ("%s() set ctx %p %s\n", __func__,
-              &context->port_.ucontext,
-              rtos::scheduler::current_thread_->name ());
-
-          context->port_.saved = false;
-
-          if (setcontext (&context->port_.ucontext) != 0)
-            {
-              trace::printf ("%s() setcontext failed with %s\n", __func__,
-                  strerror (errno));
-              abort ();
-            }
-#endif
         }
 
 #pragma GCC diagnostic pop

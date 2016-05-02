@@ -48,7 +48,10 @@
 #if defined(__APPLE__)
 // mainly for ucontext.h, but seems it is needed in other system
 // headers, since without it the sleep test crashes
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wreserved-id-macro"
 #define _XOPEN_SOURCE 600L
+#pragma clang diagnostic pop
 #endif
 
 #include <ucontext.h>

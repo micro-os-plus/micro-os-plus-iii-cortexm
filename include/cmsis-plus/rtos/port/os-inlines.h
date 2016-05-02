@@ -52,6 +52,7 @@
 #include <sys/utsname.h>
 
 #include <cmsis-plus/diag/trace.h>
+#include <cmsis-plus/iso/malloc.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -103,7 +104,7 @@ namespace os
               trace::printf ("POSIX synthetic");
             }
 
-          trace::puts("; non-preemptive.");
+          trace::puts ("; non-preemptive.");
         }
 
         inline result_t
@@ -152,7 +153,7 @@ namespace os
               rtos::scheduler::ready_threads_list_.remove_top ();
 
           ucontext_t* new_context =
-              (ucontext_t*) &(rtos::scheduler::current_thread_->context ()->port_.ucontext);
+              reinterpret_cast<ucontext_t*> (&(rtos::scheduler::current_thread_->context ().port_.ucontext));
 
           trace::printf ("%s() ctx %p %s\n", __func__, new_context,
                          rtos::scheduler::current_thread_->name ());
@@ -195,7 +196,7 @@ namespace os
           // Exit an IRQ critical section
           inline static void
           __attribute__((always_inline))
-          exit (rtos::interrupts::status_t status __attribute__((unused)))
+          exit (rtos::interrupts::status_t status)
           {
             sigprocmask (SIG_SETMASK, &status, nullptr);
           }
@@ -226,7 +227,7 @@ namespace os
           // Exit an IRQ critical section
           inline static void
           __attribute__((always_inline))
-          exit (rtos::interrupts::status_t status __attribute__((unused)))
+          exit (rtos::interrupts::status_t status)
           {
             sigprocmask (SIG_SETMASK, &status, nullptr);
           }
@@ -242,7 +243,7 @@ namespace os
         __attribute__((always_inline))
         clean (rtos::Thread* th)
         {
-          free (th->context ()->port_.ucontext.uc_stack.ss_sp);
+          // estd::free (th->context ().port_.ucontext.uc_stack.ss_sp);
         }
 
       };
