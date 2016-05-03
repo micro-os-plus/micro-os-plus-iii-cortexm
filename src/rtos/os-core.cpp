@@ -196,7 +196,7 @@ namespace os
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
 #endif
-        sa.sa_handler = signalHandler;
+        sa.sa_handler = signal_handler;
 #pragma GCC diagnostic pop
 #endif
         sigemptyset(&sa.sa_mask);
@@ -213,6 +213,7 @@ namespace os
         // first clear all fields
         timerclear(&tv.it_value);
         // then set the required ones
+
 #if 1
         tv.it_value.tv_sec = 0;
         tv.it_value.tv_usec = 1000000 / rtos::Systick_clock::frequency_hz;
@@ -224,12 +225,8 @@ namespace os
         tv.it_interval.tv_sec = 1;
         tv.it_interval.tv_usec = 0;//1000000 / rtos::Systick_clock::frequency_hz;
 #endif
-#if defined(__linux__)
-#define TIMER   0
-#else
-#define TIMER   ITIMER_REAL
-#endif
-        if (setitimer (TIMER, &tv, NULL) != 0)
+
+        if (setitimer (ITIMER_REAL, &tv, NULL) != 0)
           {
             trace::printf ("setitimer() failed\n");
             abort ();

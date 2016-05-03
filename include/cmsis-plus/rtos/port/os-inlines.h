@@ -51,6 +51,9 @@
 #include <string.h>
 #include <sys/utsname.h>
 
+// For Linux
+#include <unistd.h>
+
 #include <cmsis-plus/diag/trace.h>
 #include <cmsis-plus/iso/malloc.h>
 
@@ -190,7 +193,7 @@ namespace os
             sigset_t old;
             sigprocmask (SIG_BLOCK, &set, &old);
 
-            return old;
+            return sigismember (&old, clock::signal_number);
           }
 
           // Exit an IRQ critical section
@@ -198,7 +201,11 @@ namespace os
           __attribute__((always_inline))
           exit (rtos::interrupts::status_t status)
           {
-            sigprocmask (SIG_SETMASK, &status, nullptr);
+            sigset_t set;
+            sigemptyset (&set);
+            sigaddset (&set, clock::signal_number);
+
+            sigprocmask (status ? SIG_UNBLOCK : SIG_BLOCK, &set, nullptr);
           }
         };
 
@@ -221,7 +228,7 @@ namespace os
             sigset_t old;
             sigprocmask (SIG_UNBLOCK, &set, &old);
 
-            return old;
+            return sigismember (&old, clock::signal_number);
           }
 
           // Exit an IRQ critical section
@@ -229,7 +236,11 @@ namespace os
           __attribute__((always_inline))
           exit (rtos::interrupts::status_t status)
           {
-            sigprocmask (SIG_SETMASK, &status, nullptr);
+            sigset_t set;
+            sigemptyset (&set);
+            sigaddset (&set, clock::signal_number);
+
+            sigprocmask (status ? SIG_UNBLOCK : SIG_BLOCK, &set, nullptr);
           }
         };
 

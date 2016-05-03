@@ -83,4 +83,7 @@ typedef struct
 #endif
 } os_port_thread_context_t;
 
+// Signal set (true if signal enabled)
+typedef bool os_port_irq_status_t;
+
 #endif /* CMSIS_PLUS_RTOS_PORT_OS_C_DECLS_H_ */
