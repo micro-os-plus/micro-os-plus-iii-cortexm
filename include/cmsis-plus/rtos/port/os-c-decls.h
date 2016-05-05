@@ -59,23 +59,26 @@
 #include <stdbool.h>
 
 #if defined(__APPLE__)
-  typedef struct
-  {
-    int uc_onstack;
-    __darwin_sigset_t uc_sigmask; /* signal mask used by this context */
-    _STRUCT_SIGALTSTACK uc_stack; /* stack used by this context */
-    _STRUCT_UCONTEXT *uc_link; /* pointer to resuming context */
-    __darwin_size_t uc_mcsize; /* size of the machine context passed in */
-    _STRUCT_MCONTEXT *uc_mcontext; /* pointer to machine specific context */
-    _STRUCT_MCONTEXT __mcontext_data;
-  } _ucontext_t;
+
+// Because Darwin definitions suffer a consistency problem (produce
+// different length structures for different order headers), redefine
+// the context header locally.
+// Warning: Must be kept in sync with the system headers!
+typedef struct
+{
+  int uc_onstack;
+  __darwin_sigset_t uc_sigmask; /* signal mask used by this context */
+  _STRUCT_SIGALTSTACK uc_stack; /* stack used by this context */
+  _STRUCT_UCONTEXT *uc_link; /* pointer to resuming context */
+  __darwin_size_t uc_mcsize; /* size of the machine context passed in */
+  _STRUCT_MCONTEXT *uc_mcontext; /* pointer to machine specific context */
+  _STRUCT_MCONTEXT __mcontext_data;
+} _ucontext_t;
 
 #endif
 
-
 typedef struct
 {
-  // bool saved;
 #if defined(__APPLE__)
   _ucontext_t ucontext;
 #else
@@ -83,7 +86,7 @@ typedef struct
 #endif
 } os_port_thread_context_t;
 
-// Signal set (true if signal enabled)
+// Signal set (true if signal blocked)
 typedef bool os_port_irq_status_t;
 
 #endif /* CMSIS_PLUS_RTOS_PORT_OS_C_DECLS_H_ */
