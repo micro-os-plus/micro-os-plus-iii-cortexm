@@ -88,6 +88,8 @@ namespace os
 
       } /* namespace thread */
 
+      // ----------------------------------------------------------------------
+
       namespace scheduler
       {
 
@@ -184,13 +186,45 @@ namespace os
 #pragma GCC diagnostic pop
       } /* namespace scheduler */
 
+      // ----------------------------------------------------------------------
+
+      static void
+      systick_clock_signal_handler (int signum)
+      {
+        if (signum != clock::signal_number)
+          {
+            char ce = '?';
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+
+            write (1, &ce, 1);
+
+#pragma GCC diagnostic pop
+
+            return;
+          }
+
+#if 0
+        char c = '*';
+        write (1, &c, 1);
+#endif
+
+        signal_nesting++;
+        // Call the ticks timer ISR.
+        os_systick_handler ();
+        signal_nesting--;
+      }
+
+      // ======================================================================
+
       void
       Systick_clock::start (void)
       {
         // set handler
         struct sigaction sa;
 #if defined(__APPLE__)
-        sa.__sigaction_u.__sa_handler = signal_handler;
+        sa.__sigaction_u.__sa_handler = systick_clock_signal_handler;
 #else
 #pragma GCC diagnostic push
 #if defined(__clang__)
@@ -247,34 +281,6 @@ namespace os
           }
 #endif
 
-      }
-
-      void
-      Systick_clock::signal_handler (int signum)
-      {
-        if (signum != clock::signal_number)
-          {
-            char ce = '?';
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-result"
-
-            write (1, &ce, 1);
-
-#pragma GCC diagnostic pop
-
-            return;
-          }
-
-#if 0
-        char c = '*';
-        write (1, &c, 1);
-#endif
-
-        signal_nesting++;
-        // Call the ticks timer ISR.
-        os_systick_handler ();
-        signal_nesting--;
       }
 
     } /* namespace port */
