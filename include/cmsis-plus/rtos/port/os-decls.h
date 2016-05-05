@@ -64,13 +64,19 @@ namespace os
 
       namespace stack
       {
+        // Assume 64-bits core.
+        using element_t = uint64_t;
+
         // Align stack to 8 bytes.
-        using element_t = long long;
+        using allocation_element_t = uint64_t;
       } /* namespace stack */
 
       namespace interrupts
       {
-        using status_t = sigset_t;
+        // True if signal blocked
+        using status_t = bool;
+
+        constexpr status_t init_status = false;
       } /* namespace interrupts */
 
       namespace clock
@@ -82,7 +88,7 @@ namespace os
       {
         class Context;
 
-        using context_t = struct
+        using context_t = struct context_s
           {
             // bool volatile saved;
 #if defined(__APPLE__)
@@ -95,7 +101,7 @@ namespace os
                 __darwin_size_t uc_mcsize; /* size of the machine context passed in */
                 _STRUCT_MCONTEXT *uc_mcontext; /* pointer to machine specific context */
                 _STRUCT_MCONTEXT __mcontext_data;
-              } ucontext;
+              }ucontext;
 #else
             ucontext_t ucontext; //
 #endif
@@ -103,7 +109,7 @@ namespace os
 
       } /* namespace thread */
 
-    // ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
 
     } /* namespace port */
   } /* namespace rtos */
