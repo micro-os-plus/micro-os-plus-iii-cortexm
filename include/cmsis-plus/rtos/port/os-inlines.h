@@ -70,25 +70,6 @@ namespace os
     {
       // ----------------------------------------------------------------------
 
-      namespace thread
-      {
-        class Context
-        {
-        public:
-
-          // Used to avoid a complex casts below,
-          // that might confuse the Eclipse formatter.
-          typedef void
-          (*func_t) (void);
-
-          static void
-          create (rtos::thread::Context* context, void* func, void* args);
-        };
-
-      } /* namespace thread */
-
-      // ----------------------------------------------------------------------
-
       namespace scheduler
       {
 
@@ -133,10 +114,6 @@ namespace os
           ;
         }
 
-        // Context functions must not be inlined (the compiler prevents this).
-        void
-        reschedule (bool save = true);
-
         inline void
         __attribute__((always_inline))
         _wait_for_interrupt (void)
@@ -152,9 +129,6 @@ namespace os
         __attribute__((always_inline))
         start (void)
         {
-          rtos::scheduler::current_thread_ =
-              rtos::scheduler::ready_threads_list_.remove_top ();
-
           ucontext_t* new_context =
               reinterpret_cast<ucontext_t*> (&(rtos::scheduler::current_thread_->context ().port_.ucontext));
 
@@ -176,99 +150,71 @@ namespace os
 
       namespace interrupts
       {
-        class Critical_section
+
+        // Enter an IRQ critical section
+        inline rtos::interrupts::status_t
+        __attribute__((always_inline))
+        Critical_section::enter (void)
         {
+          sigset_t set;
+          sigemptyset (&set);
+          sigaddset (&set, clock::signal_number);
 
-        public:
+          sigset_t old;
+          sigprocmask (SIG_BLOCK, &set, &old);
 
-          // Enter an IRQ critical section
-          inline static rtos::interrupts::status_t
-          __attribute__((always_inline))
-          enter (void)
-          {
-            sigset_t set;
-            sigemptyset (&set);
-            sigaddset (&set, clock::signal_number);
+          return sigismember (&old, clock::signal_number);
+        }
 
-            sigset_t old;
-            sigprocmask (SIG_BLOCK, &set, &old);
+        // Exit an IRQ critical section
+        inline void
+        __attribute__((always_inline))
+        Critical_section::exit (rtos::interrupts::status_t status)
+        {
+          sigset_t set;
+          sigemptyset (&set);
+          sigaddset (&set, clock::signal_number);
 
-            return sigismember (&old, clock::signal_number);
-          }
-
-          // Exit an IRQ critical section
-          inline static void
-          __attribute__((always_inline))
-          exit (rtos::interrupts::status_t status)
-          {
-            sigset_t set;
-            sigemptyset (&set);
-            sigaddset (&set, clock::signal_number);
-
-            sigprocmask (status ? SIG_UNBLOCK : SIG_BLOCK, &set, nullptr);
-          }
-        };
+          sigprocmask (status ? SIG_BLOCK : SIG_UNBLOCK, &set, nullptr);
+        }
 
         // ====================================================================
 
-        class Uncritical_section
+        // Enter an IRQ uncritical section
+        inline rtos::interrupts::status_t
+        __attribute__((always_inline))
+        Uncritical_section::enter (void)
         {
+          sigset_t set;
+          sigemptyset (&set);
+          sigaddset (&set, clock::signal_number);
 
-        public:
+          sigset_t old;
+          sigprocmask (SIG_UNBLOCK, &set, &old);
 
-          // Enter an IRQ uncritical section
-          inline static rtos::interrupts::status_t
-          __attribute__((always_inline))
-          enter (void)
-          {
-            sigset_t set;
-            sigemptyset (&set);
-            sigaddset (&set, clock::signal_number);
+          return sigismember (&old, clock::signal_number);
+        }
 
-            sigset_t old;
-            sigprocmask (SIG_UNBLOCK, &set, &old);
+        // Exit an IRQ critical section
+        inline void
+        __attribute__((always_inline))
+        Uncritical_section::exit (rtos::interrupts::status_t status)
+        {
+          sigset_t set;
+          sigemptyset (&set);
+          sigaddset (&set, clock::signal_number);
 
-            return sigismember (&old, clock::signal_number);
-          }
-
-          // Exit an IRQ critical section
-          inline static void
-          __attribute__((always_inline))
-          exit (rtos::interrupts::status_t status)
-          {
-            sigset_t set;
-            sigemptyset (&set);
-            sigaddset (&set, clock::signal_number);
-
-            sigprocmask (status ? SIG_UNBLOCK : SIG_BLOCK, &set, nullptr);
-          }
-        };
+          sigprocmask (status ? SIG_BLOCK : SIG_UNBLOCK, &set, nullptr);
+        }
 
       } /* namespace interrupts */
 
-      class Thread
+      inline void
+      __attribute__((always_inline))
+      Thread::clean (rtos::Thread* th)
       {
-      public:
-
-        inline static void
-        __attribute__((always_inline))
-        clean (rtos::Thread* th)
-        {
-          // estd::free (th->context ().port_.ucontext.uc_stack.ss_sp);
-        }
-
-      };
-      class Systick_clock
-      {
-      public:
-
-        static void
-        signal_handler (int signum);
-
-        static void
-        start (void);
-
-      };
+        // estd::free (th->context ().port_.ucontext.uc_stack.ss_sp);
+      }
 
       // ======================================================================
 
