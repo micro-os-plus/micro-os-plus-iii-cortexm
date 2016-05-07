@@ -118,33 +118,11 @@ namespace os
         __attribute__((always_inline))
         _wait_for_interrupt (void)
         {
+#if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
           trace::printf ("%s() \n", __func__);
+#endif
           pause ();
         }
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-
-        inline result_t
-        __attribute__((always_inline))
-        start (void)
-        {
-          ucontext_t* new_context =
-              reinterpret_cast<ucontext_t*> (&(rtos::scheduler::current_thread_->context ().port_.ucontext));
-
-          trace::printf ("%s() ctx %p %s\n", __func__, new_context,
-                         rtos::scheduler::current_thread_->name ());
-
-#if defined NDEBUG
-          setcontext (new_context);
-#else
-          int res = setcontext (new_context);
-          assert (res == 0);
-#endif
-          return result::ok;
-        }
-
-#pragma GCC diagnostic pop
 
       } /* namespace scheduler */
 
@@ -208,13 +186,6 @@ namespace os
         }
 
       } /* namespace interrupts */
-
-      inline void
-      __attribute__((always_inline))
-      Thread::clean (rtos::Thread* th)
-      {
-        // estd::free (th->context ().port_.ucontext.uc_stack.ss_sp);
-      }
 
       // ======================================================================
 

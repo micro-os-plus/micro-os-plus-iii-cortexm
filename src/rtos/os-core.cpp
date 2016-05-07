@@ -58,7 +58,11 @@ namespace os
 
           ucontext_t* ctx =
               reinterpret_cast<ucontext_t*> (&(context->port_.ucontext));
+
+#if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
           trace::printf ("%s() getcontext %p\n", __func__, ctx);
+#endif
+
           if (getcontext (ctx) != 0)
             {
               trace::printf ("%s getcontext failed with %s\n", __func__,
@@ -74,11 +78,13 @@ namespace os
           ctx->uc_link = 0;
 
           // Configure the new stack to default values.
-          ctx->uc_stack.ss_sp = estd::malloc (SIGSTKSZ);
-          ctx->uc_stack.ss_size = SIGSTKSZ;
+          ctx->uc_stack.ss_sp = context->stack ().bottom ();
+          ctx->uc_stack.ss_size = context->stack ().size ();
           ctx->uc_stack.ss_flags = 0;
 
+#if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
           trace::printf ("%s() makecontext %p\n", __func__, ctx);
+#endif
           makecontext (ctx, reinterpret_cast<func_t> (func), 1, args);
 
           // context->port_.saved = false;
@@ -92,6 +98,39 @@ namespace os
 
       namespace scheduler
       {
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
+        void
+        start (void)
+        {
+            {
+              rtos::interrupts::Critical_section ics;
+
+              // Determine the next thread.
+              rtos::scheduler::current_thread_ =
+                  rtos::scheduler::ready_threads_list_.remove_top ();
+            }
+
+          ucontext_t* new_context =
+              reinterpret_cast<ucontext_t*> (&(rtos::scheduler::current_thread_->context ().port_.ucontext));
+
+#if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
+          trace::printf ("%s() ctx %p %s\n", __func__, new_context,
+              rtos::scheduler::current_thread_->name ());
+#endif
+
+#if defined NDEBUG
+          setcontext (new_context);
+#else
+          int res = setcontext (new_context);
+          assert(res == 0);
+#endif
+          abort ();
+        }
+
+#pragma GCC diagnostic pop
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -135,10 +174,11 @@ namespace os
 
               if (old_ctx != new_ctx)
                 {
+#if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
                   trace::printf ("%s() swapcontext %s -> %s \n", __func__,
-                                 old_thread->name (),
-                                 rtos::scheduler::current_thread_->name ());
-
+                      old_thread->name (),
+                      rtos::scheduler::current_thread_->name ());
+#endif
                   if (swapcontext (old_ctx, new_ctx) != 0)
                     {
                       trace::printf ("%s() swapcontext failed with %s\n",
@@ -148,9 +188,10 @@ namespace os
                 }
               else
                 {
+#if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
                   trace::printf ("%s() nop %s\n", __func__,
-                                 old_thread->name ());
-
+                      old_thread->name ());
+#endif
                 }
             }
           else
@@ -167,10 +208,11 @@ namespace os
                   context = &(rtos::scheduler::current_thread_->context ());
                 }
 
+#if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
               trace::printf ("%s() setcontext %p %s\n", __func__,
-                             &context->port_.ucontext,
-                             rtos::scheduler::current_thread_->name ());
-
+                  &context->port_.ucontext,
+                  rtos::scheduler::current_thread_->name ());
+#endif
               // context->port_.saved = false;
               ucontext_t* ctx =
                   reinterpret_cast<ucontext_t*> (&context->port_.ucontext);
