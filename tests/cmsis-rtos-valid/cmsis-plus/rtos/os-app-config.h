@@ -35,11 +35,12 @@
 
 // ----------------------------------------------------------------------------
 
-#define OS_INTEGER_SYSTICK_FREQUENCY_HZ                     (200)
+#define OS_INTEGER_SYSTICK_FREQUENCY_HZ                     (500)
 
 // ----------------------------------------------------------------------------
 
-#if 1
+#if 0
+
 #define OS_TRACE_RTOS_CLOCKS
 #define OS_TRACE_RTOS_CONDVAR
 #define OS_TRACE_RTOS_EVFLAGS
@@ -47,9 +48,21 @@
 #define OS_TRACE_RTOS_MEMPOOL
 #define OS_TRACE_RTOS_MQUEUE
 #define OS_TRACE_RTOS_MUTEX
+#define OS_TRACE_RTOS_RTC_TICK
+#define OS_TRACE_RTOS_SCHEDULER
 #define OS_TRACE_RTOS_SEMAPHORE
 #define OS_TRACE_RTOS_THREAD
+#define OS_TRACE_RTOS_THREAD_CONTEXT
+#define OS_TRACE_RTOS_THREAD_SIG
 #define OS_TRACE_RTOS_TIMER
+
+#define OS_TRACE_LIBC_MALLOC
+#define OS_TRACE_LIBC_ATEXIT
+
+#else
+
+#define OS_TRACE_RTOS_RTC_TICK
+
 #endif
 
 // ----------------------------------------------------------------------------
