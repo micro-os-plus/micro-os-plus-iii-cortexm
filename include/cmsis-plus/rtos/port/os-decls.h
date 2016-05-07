@@ -56,10 +56,8 @@ namespace os
 {
   namespace rtos
   {
-
     namespace port
     {
-
       // ----------------------------------------------------------------------
 
       namespace stack
@@ -69,6 +67,12 @@ namespace os
 
         // Align stack to 8 bytes.
         using allocation_element_t = uint64_t;
+
+        // Initial value for the minimum stack size in bytes.
+        constexpr std::size_t min_size_bytes = SIGSTKSZ;
+
+        // Initial value for the default stack size in bytes.
+        constexpr std::size_t default_size_bytes = SIGSTKSZ;
       } /* namespace stack */
 
       namespace interrupts
@@ -109,7 +113,7 @@ namespace os
 
       } /* namespace thread */
 
-// ----------------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     } /* namespace port */
   } /* namespace rtos */
@@ -118,5 +122,13 @@ namespace os
 // ----------------------------------------------------------------------------
 
 #endif /* __cplusplus */
+
+#if !defined(OS_INTEGER_RTOS_MAIN_STACK_SIZE_BYTES)
+#define OS_INTEGER_RTOS_MAIN_STACK_SIZE_BYTES (SIGSTKSZ)
+#endif
+
+#if !defined(OS_INTEGER_RTOS_IDLE_STACK_SIZE_BYTES)
+#define OS_INTEGER_RTOS_IDLE_STACK_SIZE_BYTES (SIGSTKSZ)
+#endif
 
 #endif /* CMSIS_PLUS_RTOS_PORT_OS_DECLS_H_ */
