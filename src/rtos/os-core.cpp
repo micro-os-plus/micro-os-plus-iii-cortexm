@@ -118,7 +118,7 @@ namespace os
 
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
           trace::printf ("%s() ctx %p %s\n", __func__, new_context,
-              rtos::scheduler::current_thread_->name ());
+                         rtos::scheduler::current_thread_->name ());
 #endif
 
 #if defined NDEBUG
@@ -136,48 +136,74 @@ namespace os
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
         void
-        reschedule (bool save)
+        reschedule (void)
         {
+          if (rtos::scheduler::locked () || rtos::scheduler::in_handler_mode ())
+            {
+#if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
+              trace::printf ("%s() nop\n", __func__);
+#endif
+              return;
+            }
+
+#if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
+          trace::printf ("%s()\n", __func__);
+#endif
+
           // For some complicated reasons, the context save/restore
           // functions must be called in the same the function.
           // The idea to inline functions does not work, since
           // the compiler does not inline functions with context calls.
 
-          if (save)
+          bool save = false;
+          rtos::Thread* old_thread;
+          ucontext_t* old_ctx;
+          ucontext_t* new_ctx;
+
             {
-              if (rtos::scheduler::locked ())
+              rtos::interrupts::Critical_section ics;
+
+              old_thread = rtos::scheduler::current_thread_;
+              if ((old_thread->sched_state_ == rtos::thread::state::running)
+                  || (old_thread->sched_state_ == rtos::thread::state::waiting)
+                  || (old_thread->sched_state_ == rtos::thread::state::ready))
                 {
-                  return;
+                  save = true;
                 }
+#if defined(OS_TRACE_RTOS_THREAD_CONTEXT_)
+              trace::printf ("%s() old %s %d %d\n", __func__, old_thread->name (),
+                             old_thread->sched_state_, save);
+#endif
 
-              rtos::Thread* old_thread;
-              ucontext_t* old_ctx;
-              ucontext_t* new_ctx;
-
+              if (old_thread->sched_state_ == rtos::thread::state::running)
                 {
-                  rtos::interrupts::Critical_section ics;
+                  old_thread->sched_state_ = rtos::thread::state::waiting;
 
-                  old_thread = rtos::scheduler::current_thread_;
-                  if (old_thread->sched_state_ == rtos::thread::state::running)
+                  Waiting_thread_node& crt_node = old_thread->ready_node_;
+                  if (crt_node.next == nullptr)
                     {
-                      old_thread->sched_state_ = rtos::thread::state::waiting;
+                      rtos::scheduler::ready_threads_list_.link (crt_node);
+                      // Ready state set in above link().
                     }
-
-                  old_ctx =
-                      reinterpret_cast<ucontext_t*> (&old_thread->context ().port_.ucontext);
-                  // Select the top priority thread
-                  rtos::scheduler::current_thread_ =
-                      rtos::scheduler::ready_threads_list_.remove_top ();
-                  new_ctx =
-                      reinterpret_cast<ucontext_t*> (&rtos::scheduler::current_thread_->context ().port_.ucontext);
                 }
 
-              if (old_ctx != new_ctx)
+              old_ctx =
+                  reinterpret_cast<ucontext_t*> (&old_thread->context ().port_.ucontext);
+              // Select the top priority thread
+              rtos::scheduler::current_thread_ =
+                  rtos::scheduler::ready_threads_list_.remove_top ();
+              new_ctx =
+                  reinterpret_cast<ucontext_t*> (&rtos::scheduler::current_thread_->context ().port_.ucontext);
+            }
+
+          if (old_ctx != new_ctx)
+            {
+              if (save)
                 {
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
                   trace::printf ("%s() swapcontext %s -> %s \n", __func__,
-                      old_thread->name (),
-                      rtos::scheduler::current_thread_->name ());
+                                 old_thread->name (),
+                                 rtos::scheduler::current_thread_->name ());
 #endif
                   if (swapcontext (old_ctx, new_ctx) != 0)
                     {
@@ -189,39 +215,23 @@ namespace os
               else
                 {
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
-                  trace::printf ("%s() nop %s\n", __func__,
-                      old_thread->name ());
+                  trace::printf ("%s() setcontext %s\n", __func__,
+                                 rtos::scheduler::current_thread_->name ());
 #endif
+                  // context->port_.saved = false;
+                  if (setcontext (new_ctx) != 0)
+                    {
+                      trace::printf ("%s() setcontext failed with %s\n",
+                                     __func__, strerror (errno));
+                      abort ();
+                    }
                 }
             }
           else
             {
-              rtos::thread::Context* context;
-
-                {
-                  rtos::interrupts::Critical_section ics;
-
-                  // Select the top priority thread
-                  rtos::scheduler::current_thread_ =
-                      rtos::scheduler::ready_threads_list_.remove_top ();
-
-                  context = &(rtos::scheduler::current_thread_->context ());
-                }
-
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
-              trace::printf ("%s() setcontext %p %s\n", __func__,
-                  &context->port_.ucontext,
-                  rtos::scheduler::current_thread_->name ());
+              trace::printf ("%s() nop %s\n", __func__, old_thread->name ());
 #endif
-              // context->port_.saved = false;
-              ucontext_t* ctx =
-                  reinterpret_cast<ucontext_t*> (&context->port_.ucontext);
-              if (setcontext (ctx) != 0)
-                {
-                  trace::printf ("%s() setcontext failed with %s\n", __func__,
-                                 strerror (errno));
-                  abort ();
-                }
             }
         }
 
