@@ -110,7 +110,7 @@ namespace os
 
               // Determine the next thread.
               rtos::scheduler::current_thread_ =
-                  rtos::scheduler::ready_threads_list_.remove_top ();
+                  rtos::scheduler::ready_threads_list_.unlink_head ();
             }
 
           ucontext_t* new_context =
@@ -191,7 +191,7 @@ namespace os
                   reinterpret_cast<ucontext_t*> (&old_thread->context ().port_.ucontext);
               // Select the top priority thread
               rtos::scheduler::current_thread_ =
-                  rtos::scheduler::ready_threads_list_.remove_top ();
+                  rtos::scheduler::ready_threads_list_.unlink_head ();
               new_ctx =
                   reinterpret_cast<ucontext_t*> (&rtos::scheduler::current_thread_->context ().port_.ucontext);
             }
