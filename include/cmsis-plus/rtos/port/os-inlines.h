@@ -198,14 +198,6 @@ namespace os
           ;
         }
 
-        inline void
-        __attribute__((always_inline))
-        yield (void)
-        {
-          rtos::scheduler::current_thread_->resume ();
-          scheduler::reschedule ();
-        }
-
       } /* namespace this_thread */
 
     // ======================================================================
