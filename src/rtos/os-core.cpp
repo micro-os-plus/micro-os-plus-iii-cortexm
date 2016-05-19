@@ -35,6 +35,8 @@
 
 #include <cmsis-plus/iso/malloc.h>
 
+#include <sys/time.h>
+
 uint32_t signal_nesting;
 
 namespace os
@@ -172,7 +174,7 @@ namespace os
                 }
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT_)
               trace::printf ("%s() old %s %d %d\n", __func__, old_thread->name (),
-                             old_thread->sched_state_, save);
+                  old_thread->sched_state_, save);
 #endif
 
               if (old_thread->sched_state_ == rtos::thread::state::running)
@@ -299,7 +301,11 @@ namespace os
         // set timer
         struct itimerval tv;
         // first clear all fields
+#if defined(__APPLE__)
+        memset (&tv, 0, sizeof(tv));
+#else
         timerclear(&tv.it_value);
+#endif
         // then set the required ones
 
 #if 1

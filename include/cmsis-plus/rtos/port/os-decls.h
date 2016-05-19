@@ -94,21 +94,7 @@ namespace os
 
         using context_t = struct context_s
           {
-            // bool volatile saved;
-#if defined(__APPLE__)
-            _STRUCT_UCONTEXT
-              {
-                int uc_onstack;
-                __darwin_sigset_t uc_sigmask; /* signal mask used by this context */
-                _STRUCT_SIGALTSTACK uc_stack; /* stack used by this context */
-                _STRUCT_UCONTEXT *uc_link; /* pointer to resuming context */
-                __darwin_size_t uc_mcsize; /* size of the machine context passed in */
-                _STRUCT_MCONTEXT *uc_mcontext; /* pointer to machine specific context */
-                _STRUCT_MCONTEXT __mcontext_data;
-              }ucontext;
-#else
             ucontext_t ucontext; //
-#endif
           };
 
       } /* namespace thread */
