@@ -277,13 +277,15 @@ namespace os
         struct sigaction sa;
 #if defined(__APPLE__)
         sa.__sigaction_u.__sa_handler = systick_clock_signal_handler;
-#else
+#elif defined(__linux__)
 #pragma GCC diagnostic push
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
 #endif
-        sa.sa_handler = signal_handler;
+        sa.sa_handler = systick_clock_signal_handler;
 #pragma GCC diagnostic pop
+#else
+#error Platform unsupported
 #endif
         sigemptyset(&sa.sa_mask);
         sa.sa_flags = SA_RESTART;

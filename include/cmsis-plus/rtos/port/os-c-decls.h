@@ -45,13 +45,17 @@
 #ifndef CMSIS_PLUS_RTOS_PORT_OS_C_DECLS_H_
 #define CMSIS_PLUS_RTOS_PORT_OS_C_DECLS_H_
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(__linux__)
+
 // mainly for ucontext.h, but seems it is needed in other system
 // headers, since without it the sleep test crashes
-#pragma clang diagnostic push
+#pragma GCC diagnostic push
+#if defined(__clang__)
 #pragma clang diagnostic ignored "-Wreserved-id-macro"
+#endif
 #define _XOPEN_SOURCE 600L
-#pragma clang diagnostic pop
+#pragma GCC diagnostic pop
+
 #endif
 
 #include <ucontext.h>
