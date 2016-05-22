@@ -88,16 +88,10 @@ namespace os
         constexpr int signal_number = SIGALRM;
       } /* namespace clock */
 
-      namespace thread
-      {
-        class Context;
-
-        using context_t = struct context_s
-          {
-            ucontext_t ucontext; //
-          };
-
-      } /* namespace thread */
+      using thread_context_t = struct thread_context_s
+        {
+          ucontext_t ucontext; //
+        };
 
     // ------------------------------------------------------------------------
 

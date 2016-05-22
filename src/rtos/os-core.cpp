@@ -47,54 +47,51 @@ namespace os
     {
       // ----------------------------------------------------------------------
 
-      namespace thread
-      {
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
-        void
-        Context::create (rtos::thread::Context* context, void* func, void* args)
-        {
-          memset (&context->port_, 0, sizeof(context->port_));
+      void
+      context::create (void* context, void* func, void* args)
+      {
+        class rtos::thread::context* th_ctx =
+            static_cast<class rtos::thread::context*> (context);
+        memset (&th_ctx->port_, 0, sizeof(th_ctx->port_));
 
-          ucontext_t* ctx =
-              reinterpret_cast<ucontext_t*> (&(context->port_.ucontext));
-
-#if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
-          trace::printf ("%s() getcontext %p\n", __func__, ctx);
-#endif
-
-          if (getcontext (ctx) != 0)
-            {
-              trace::printf ("%s getcontext failed with %s\n", __func__,
-                             strerror (errno));
-              abort ();
-            }
-
-          // The context in itself is not needed, but makecontext()
-          // requires a context obtained by getcontext().
-
-          // Remove the parent link.
-          // TODO: maybe use this to link to exit code.
-          ctx->uc_link = 0;
-
-          // Configure the new stack to default values.
-          ctx->uc_stack.ss_sp = context->stack ().bottom ();
-          ctx->uc_stack.ss_size = context->stack ().size ();
-          ctx->uc_stack.ss_flags = 0;
+        ucontext_t* ctx =
+            reinterpret_cast<ucontext_t*> (&(th_ctx->port_.ucontext));
 
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
-          trace::printf ("%s() makecontext %p\n", __func__, ctx);
+        trace::printf ("%s() getcontext %p\n", __func__, ctx);
 #endif
-          makecontext (ctx, reinterpret_cast<func_t> (func), 1, args);
 
-          // context->port_.saved = false;
-        }
+        if (getcontext (ctx) != 0)
+          {
+            trace::printf ("%s getcontext failed with %s\n", __func__,
+                           strerror (errno));
+            abort ();
+          }
+
+        // The context in itself is not needed, but makecontext()
+        // requires a context obtained by getcontext().
+
+        // Remove the parent link.
+        // TODO: maybe use this to link to exit code.
+        ctx->uc_link = 0;
+
+        // Configure the new stack to default values.
+        ctx->uc_stack.ss_sp = th_ctx->stack ().bottom ();
+        ctx->uc_stack.ss_size = th_ctx->stack ().size ();
+        ctx->uc_stack.ss_flags = 0;
+
+#if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
+        trace::printf ("%s() makecontext %p\n", __func__, ctx);
+#endif
+        makecontext (ctx, reinterpret_cast<func_t> (func), 1, args);
+
+        // context->port_.saved = false;
+      }
 
 #pragma GCC diagnostic pop
-
-      } /* namespace thread */
 
       // ----------------------------------------------------------------------
 
@@ -108,7 +105,7 @@ namespace os
         start (void)
         {
             {
-              rtos::interrupts::Critical_section ics;
+              rtos::interrupts::critical_section ics;
 
               // Determine the next thread.
               rtos::scheduler::current_thread_ =
@@ -116,7 +113,7 @@ namespace os
             }
 
           ucontext_t* new_context =
-              reinterpret_cast<ucontext_t*> (&(rtos::scheduler::current_thread_->context ().port_.ucontext));
+              reinterpret_cast<ucontext_t*> (&(rtos::scheduler::current_thread_->context_.port_.ucontext));
 
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
           trace::printf ("%s() ctx %p %s\n", __func__, new_context,
@@ -131,11 +128,6 @@ namespace os
 #endif
           abort ();
         }
-
-#pragma GCC diagnostic pop
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
         void
         reschedule (void)
@@ -158,12 +150,12 @@ namespace os
           // the compiler does not inline functions with context calls.
 
           bool save = false;
-          rtos::Thread* old_thread;
+          rtos::thread* old_thread;
           ucontext_t* old_ctx;
           ucontext_t* new_ctx;
 
             {
-              rtos::interrupts::Critical_section ics;
+              rtos::interrupts::critical_section ics;
 
               old_thread = rtos::scheduler::current_thread_;
               if ((old_thread->sched_state_ == rtos::thread::state::running)
@@ -172,16 +164,17 @@ namespace os
                 {
                   save = true;
                 }
-#if defined(OS_TRACE_RTOS_THREAD_CONTEXT_)
-              trace::printf ("%s() old %s %d %d\n", __func__, old_thread->name (),
-                  old_thread->sched_state_, save);
+#if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
+              trace::printf ("%s() old %s %d %d\n", __func__,
+                             old_thread->name (), old_thread->sched_state_,
+                             save);
 #endif
 
               if (old_thread->sched_state_ == rtos::thread::state::running)
                 {
                   old_thread->sched_state_ = rtos::thread::state::waiting;
 
-                  Waiting_thread_node& crt_node = old_thread->ready_node_;
+                  waiting_thread_node& crt_node = old_thread->ready_node_;
                   if (crt_node.next == nullptr)
                     {
                       rtos::scheduler::ready_threads_list_.link (crt_node);
@@ -190,12 +183,12 @@ namespace os
                 }
 
               old_ctx =
-                  reinterpret_cast<ucontext_t*> (&old_thread->context ().port_.ucontext);
+                  reinterpret_cast<ucontext_t*> (&old_thread->context_.port_.ucontext);
               // Select the top priority thread
               rtos::scheduler::current_thread_ =
                   rtos::scheduler::ready_threads_list_.unlink_head ();
               new_ctx =
-                  reinterpret_cast<ucontext_t*> (&rtos::scheduler::current_thread_->context ().port_.ucontext);
+                  reinterpret_cast<ucontext_t*> (&rtos::scheduler::current_thread_->context_.port_.ucontext);
             }
 
           if (old_ctx != new_ctx)
@@ -273,7 +266,7 @@ namespace os
       // ======================================================================
 
       void
-      Systick_clock::start (void)
+      clock_systick::start (void)
       {
         // set handler
         struct sigaction sa;
@@ -310,14 +303,14 @@ namespace os
 
 #if 1
         tv.it_value.tv_sec = 0;
-        tv.it_value.tv_usec = 1000000 / rtos::Systick_clock::frequency_hz;
+        tv.it_value.tv_usec = 1000000 / rtos::clock_systick::frequency_hz;
         tv.it_interval.tv_sec = 0;
-        tv.it_interval.tv_usec = 1000000 / rtos::Systick_clock::frequency_hz;
+        tv.it_interval.tv_usec = 1000000 / rtos::clock_systick::frequency_hz;
 #else
         tv.it_value.tv_sec = 1;
-        tv.it_value.tv_usec = 0; //1000000 / rtos::Systick_clock::frequency_hz;
+        tv.it_value.tv_usec = 0; //1000000 / rtos::clock_systick::frequency_hz;
         tv.it_interval.tv_sec = 1;
-        tv.it_interval.tv_usec = 0;//1000000 / rtos::Systick_clock::frequency_hz;
+        tv.it_interval.tv_usec = 0;//1000000 / rtos::clock_systick::frequency_hz;
 #endif
 
         if (setitimer (ITIMER_REAL, &tv, NULL) != 0)
