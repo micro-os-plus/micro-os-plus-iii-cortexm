@@ -45,12 +45,18 @@
 #ifndef CMSIS_PLUS_RTOS_PORT_OS_C_DECLS_H_
 #define CMSIS_PLUS_RTOS_PORT_OS_C_DECLS_H_
 
+#include <stdint.h>
+
 #if !defined (_XOPEN_SOURCE)
 #error This port requires defining _XOPEN_SOURCE=600L globally
 #endif
 #include <ucontext.h>
 
 #include <stdbool.h>
+
+typedef uint64_t os_port_clock_timestamp_t;
+typedef uint32_t os_port_clock_duration_t;
+typedef uint64_t os_port_clock_offset_t;
 
 typedef struct
 {
