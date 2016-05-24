@@ -41,16 +41,33 @@
 #include <cmsis-plus/rtos/os-app-config.h>
 #include <cmsis-plus/rtos/port/os-c-decls.h>
 
-#include <signal.h>
-// Platform definitions
-#include <sys/time.h>
+#if !defined(OS_INTEGER_RTOS_MIN_STACK_SIZE_BYTES)
+#define OS_INTEGER_RTOS_MIN_STACK_SIZE_BYTES (SIGSTKSZ)
+#endif
+
+#if !defined(OS_INTEGER_RTOS_DEFAULT_STACK_SIZE_BYTES)
+#define OS_INTEGER_RTOS_DEFAULT_STACK_SIZE_BYTES (SIGSTKSZ)
+#endif
+
+#if !defined(OS_INTEGER_RTOS_MAIN_STACK_SIZE_BYTES)
+#define OS_INTEGER_RTOS_MAIN_STACK_SIZE_BYTES (SIGSTKSZ)
+#endif
+
+#if !defined(OS_INTEGER_RTOS_IDLE_STACK_SIZE_BYTES)
+#define OS_INTEGER_RTOS_IDLE_STACK_SIZE_BYTES (SIGSTKSZ)
+#endif
 
 // ----------------------------------------------------------------------------
 
 #ifdef  __cplusplus
 
+#include <signal.h>
+// Platform definitions
+#include <sys/time.h>
+
 #include <cstdint>
 #include <cstddef>
+
 
 namespace os
 {
@@ -69,10 +86,10 @@ namespace os
         using allocation_element_t = uint64_t;
 
         // Initial value for the minimum stack size in bytes.
-        constexpr std::size_t min_size_bytes = SIGSTKSZ;
+        constexpr std::size_t min_size_bytes = OS_INTEGER_RTOS_MIN_STACK_SIZE_BYTES;
 
         // Initial value for the default stack size in bytes.
-        constexpr std::size_t default_size_bytes = SIGSTKSZ;
+        constexpr std::size_t default_size_bytes = OS_INTEGER_RTOS_DEFAULT_STACK_SIZE_BYTES;
       } /* namespace stack */
 
       namespace interrupts
@@ -102,13 +119,5 @@ namespace os
 // ----------------------------------------------------------------------------
 
 #endif /* __cplusplus */
-
-#if !defined(OS_INTEGER_RTOS_MAIN_STACK_SIZE_BYTES)
-#define OS_INTEGER_RTOS_MAIN_STACK_SIZE_BYTES (SIGSTKSZ)
-#endif
-
-#if !defined(OS_INTEGER_RTOS_IDLE_STACK_SIZE_BYTES)
-#define OS_INTEGER_RTOS_IDLE_STACK_SIZE_BYTES (SIGSTKSZ)
-#endif
 
 #endif /* CMSIS_PLUS_RTOS_PORT_OS_DECLS_H_ */
