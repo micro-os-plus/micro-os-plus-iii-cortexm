@@ -25,6 +25,10 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#if defined(__APPLE__) || defined(__linux__)
+
+// ----------------------------------------------------------------------------
+
 #include <cassert>
 
 #include <cmsis-plus/rtos/os.h>
@@ -339,3 +343,7 @@ namespace os
     } /* namespace port */
   } /* namespace rtos */
 } /* namespace os */
+
+// ----------------------------------------------------------------------------
+
+#endif /* defined(__APPLE__) || defined(__linux__) */

@@ -16,6 +16,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if defined(__APPLE__) || defined(__linux__)
+
+// ----------------------------------------------------------------------------
+
 #if defined(TRACE)
 
 #include <cmsis-plus/diag/trace.h>
@@ -41,7 +45,11 @@ namespace os
     ssize_t
     write (const void* buf, std::size_t nbyte)
     {
+#if defined(OS_USE_TRACE_POSIX_STDOUT)
+      return ::write (1, buf, nbyte); // Forward to STDOUT.
+#else
       return ::write (2, buf, nbyte); // Forward to STDERR.
+#endif
     }
 
   } /* namespace trace */
@@ -51,3 +59,4 @@ namespace os
 
 // ----------------------------------------------------------------------------
 
+#endif /* defined(__APPLE__) || defined(__linux__) */
