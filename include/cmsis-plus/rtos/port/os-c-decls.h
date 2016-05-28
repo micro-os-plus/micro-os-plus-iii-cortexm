@@ -52,6 +52,7 @@
 #endif
 #include <ucontext.h>
 
+#include <signal.h>
 #include <stdbool.h>
 
 typedef uint64_t os_port_clock_timestamp_t;
