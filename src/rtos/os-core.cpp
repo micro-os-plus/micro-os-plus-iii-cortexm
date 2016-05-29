@@ -65,13 +65,13 @@ namespace os
             reinterpret_cast<ucontext_t*> (&(th_ctx->port_.ucontext));
 
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
-        trace::printf ("%s() getcontext %p\n", __func__, ctx);
+        trace::printf ("port::context::%s() getcontext %p\n", __func__, ctx);
 #endif
 
         if (getcontext (ctx) != 0)
           {
-            trace::printf ("%s getcontext failed with %s\n", __func__,
-                           strerror (errno));
+            trace::printf ("port::context::%s() getcontext failed with %s\n",
+                           __func__, strerror (errno));
             abort ();
           }
 
@@ -88,7 +88,7 @@ namespace os
         ctx->uc_stack.ss_flags = 0;
 
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
-        trace::printf ("%s() makecontext %p\n", __func__, ctx);
+        trace::printf ("port::context::%s() makecontext %p\n", __func__, ctx);
 #endif
         makecontext (ctx, reinterpret_cast<func_t> (func), 1, args);
 
@@ -120,7 +120,8 @@ namespace os
               reinterpret_cast<ucontext_t*> (&(rtos::scheduler::current_thread_->context_.port_.ucontext));
 
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
-          trace::printf ("%s() ctx %p %s\n", __func__, new_context,
+          trace::printf ("port::scheduler::%s() ctx %p %s\n", __func__,
+                         new_context,
                          rtos::scheduler::current_thread_->name ());
 #endif
 
@@ -139,13 +140,13 @@ namespace os
           if (rtos::scheduler::locked () || rtos::scheduler::in_handler_mode ())
             {
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
-              trace::printf ("%s() nop\n", __func__);
+              trace::printf ("port::scheduler::%s() nop\n", __func__);
 #endif
               return;
             }
 
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
-          trace::printf ("%s()\n", __func__);
+          trace::printf ("port::scheduler::%s()\n", __func__);
 #endif
 
           // For some complicated reasons, the context save/restore
@@ -169,7 +170,7 @@ namespace os
                   save = true;
                 }
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
-              trace::printf ("%s() old %s %d %d\n", __func__,
+              trace::printf ("port::scheduler::%s() old %s %d %d\n", __func__,
                              old_thread->name (), old_thread->sched_state_,
                              save);
 #endif
@@ -200,28 +201,32 @@ namespace os
               if (save)
                 {
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
-                  trace::printf ("%s() swapcontext %s -> %s \n", __func__,
-                                 old_thread->name (),
-                                 rtos::scheduler::current_thread_->name ());
+                  trace::printf (
+                      "port::scheduler::%s() swapcontext %s -> %s \n", __func__,
+                      old_thread->name (),
+                      rtos::scheduler::current_thread_->name ());
 #endif
                   if (swapcontext (old_ctx, new_ctx) != 0)
                     {
-                      trace::printf ("%s() swapcontext failed with %s\n",
-                                     __func__, strerror (errno));
+                      trace::printf (
+                          "port::scheduler::%s() swapcontext failed with %s\n",
+                          __func__, strerror (errno));
                       abort ();
                     }
                 }
               else
                 {
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
-                  trace::printf ("%s() setcontext %s\n", __func__,
+                  trace::printf ("port::scheduler::%s() setcontext %s\n",
+                                 __func__,
                                  rtos::scheduler::current_thread_->name ());
 #endif
                   // context->port_.saved = false;
                   if (setcontext (new_ctx) != 0)
                     {
-                      trace::printf ("%s() setcontext failed with %s\n",
-                                     __func__, strerror (errno));
+                      trace::printf (
+                          "port::scheduler::%s() setcontext failed with %s\n",
+                          __func__, strerror (errno));
                       abort ();
                     }
                 }
@@ -229,7 +234,8 @@ namespace os
           else
             {
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
-              trace::printf ("%s() nop %s\n", __func__, old_thread->name ());
+              trace::printf ("port::scheduler::%s() nop %s\n", __func__,
+                             old_thread->name ());
 #endif
             }
         }
@@ -291,7 +297,8 @@ namespace os
 
         if (sigaction (clock::signal_number, &sa, nullptr) != 0)
           {
-            trace::printf ("sigaction() failed\n");
+            trace::printf ("port::clock_systick::%s() sigaction() failed\n",
+                           __func__);
             abort ();
           }
 
@@ -319,7 +326,8 @@ namespace os
 
         if (setitimer (ITIMER_REAL, &tv, NULL) != 0)
           {
-            trace::printf ("setitimer() failed\n");
+            trace::printf ("port::clock_systick::%s() setitimer() failed\n",
+                           __func__);
             abort ();
           }
 
