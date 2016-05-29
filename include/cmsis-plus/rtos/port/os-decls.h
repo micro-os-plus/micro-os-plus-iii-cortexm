@@ -30,7 +30,7 @@
  * replacement for C++ applications.
  *
  * It is included in `cmsis-plus/rtos/os.h` to customise
- * it with port specific declarations.
+ * it with POSIX specific declarations.
  */
 
 #ifndef CMSIS_PLUS_RTOS_PORT_OS_DECLS_H_
@@ -50,11 +50,11 @@
 #endif
 
 #if !defined(OS_INTEGER_RTOS_MAIN_STACK_SIZE_BYTES)
-#define OS_INTEGER_RTOS_MAIN_STACK_SIZE_BYTES (SIGSTKSZ)
+#define OS_INTEGER_RTOS_MAIN_STACK_SIZE_BYTES (OS_INTEGER_RTOS_DEFAULT_STACK_SIZE_BYTES)
 #endif
 
 #if !defined(OS_INTEGER_RTOS_IDLE_STACK_SIZE_BYTES)
-#define OS_INTEGER_RTOS_IDLE_STACK_SIZE_BYTES (SIGSTKSZ)
+#define OS_INTEGER_RTOS_IDLE_STACK_SIZE_BYTES (OS_INTEGER_RTOS_DEFAULT_STACK_SIZE_BYTES)
 #endif
 
 // ----------------------------------------------------------------------------
@@ -67,7 +67,6 @@
 
 #include <cstdint>
 #include <cstddef>
-
 
 namespace os
 {
@@ -86,10 +85,12 @@ namespace os
         using allocation_element_t = uint64_t;
 
         // Initial value for the minimum stack size in bytes.
-        constexpr std::size_t min_size_bytes = OS_INTEGER_RTOS_MIN_STACK_SIZE_BYTES;
+        constexpr std::size_t min_size_bytes =
+            OS_INTEGER_RTOS_MIN_STACK_SIZE_BYTES;
 
         // Initial value for the default stack size in bytes.
-        constexpr std::size_t default_size_bytes = OS_INTEGER_RTOS_DEFAULT_STACK_SIZE_BYTES;
+        constexpr std::size_t default_size_bytes =
+            OS_INTEGER_RTOS_DEFAULT_STACK_SIZE_BYTES;
       } /* namespace stack */
 
       namespace interrupts
@@ -107,7 +108,9 @@ namespace os
 
       using thread_context_t = struct thread_context_s
         {
-          ucontext_t ucontext; //
+          // On POSIX, the context is saved on standard (although deprecated)
+          // ucontext_t structures. It requires _XOPEN_SOURCE=700L to compile.
+          ucontext_t ucontext;//
         };
 
     // ------------------------------------------------------------------------
