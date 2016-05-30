@@ -95,6 +95,8 @@ namespace os
         // Initial value for the default stack size in bytes.
         constexpr std::size_t default_size_bytes =
             OS_INTEGER_RTOS_DEFAULT_STACK_SIZE_BYTES;
+
+        constexpr element_t magic = 0xEFBEADDEEFBEADDE;
       } /* namespace stack */
 
       namespace interrupts
