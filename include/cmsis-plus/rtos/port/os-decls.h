@@ -46,7 +46,11 @@
 #endif
 
 #if !defined(OS_INTEGER_RTOS_DEFAULT_STACK_SIZE_BYTES)
+#if defined(__linux__)
+#define OS_INTEGER_RTOS_DEFAULT_STACK_SIZE_BYTES (2 * SIGSTKSZ)
+#else
 #define OS_INTEGER_RTOS_DEFAULT_STACK_SIZE_BYTES (SIGSTKSZ)
+#endif /* defined(__linux__) */
 #endif
 
 #if !defined(OS_INTEGER_RTOS_MAIN_STACK_SIZE_BYTES)
