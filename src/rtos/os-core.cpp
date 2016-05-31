@@ -175,17 +175,8 @@ namespace os
                              save);
 #endif
 
-              if (old_thread->sched_state_ == rtos::thread::state::running)
-                {
-                  old_thread->sched_state_ = rtos::thread::state::waiting;
-
-                  waiting_thread_node& crt_node = old_thread->ready_node_;
-                  if (crt_node.next == nullptr)
-                    {
-                      rtos::scheduler::ready_threads_list_.link (crt_node);
-                      // Ready state set in above link().
-                    }
-                }
+              // Normally the old running thread must be re-linked to ready.
+              old_thread->_relink_running ();
 
               old_ctx =
                   reinterpret_cast<ucontext_t*> (&old_thread->context_.port_.ucontext);
