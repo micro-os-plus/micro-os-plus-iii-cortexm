@@ -129,6 +129,13 @@ namespace os
       namespace interrupts
       {
 
+        inline bool
+        __attribute__((always_inline))
+        is_priority_valid (void)
+        {
+          return true;
+        }
+
         // Enter an IRQ critical section
         inline rtos::interrupts::status_t
         __attribute__((always_inline))
