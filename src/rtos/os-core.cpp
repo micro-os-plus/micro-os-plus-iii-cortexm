@@ -175,14 +175,11 @@ namespace os
                              save);
 #endif
 
-              // Normally the old running thread must be re-linked to ready.
-              old_thread->_relink_running ();
-
               old_ctx =
                   reinterpret_cast<ucontext_t*> (&old_thread->context_.port_.ucontext);
-              // Select the top priority thread
-              rtos::scheduler::current_thread_ =
-                  rtos::scheduler::ready_threads_list_.unlink_head ();
+
+              rtos::scheduler::_switch_threads ();
+
               new_ctx =
                   reinterpret_cast<ucontext_t*> (&rtos::scheduler::current_thread_->context_.port_.ucontext);
             }
