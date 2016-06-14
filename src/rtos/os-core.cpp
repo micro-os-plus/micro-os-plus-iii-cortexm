@@ -336,6 +336,56 @@ namespace os
 
       }
 
+      // ======================================================================
+
+      static uint64_t previous_timestamp;
+
+      static uint64_t
+      get_current_micros (void);
+
+      uint64_t
+      get_current_micros (void)
+      {
+        struct timeval tp;
+        gettimeofday (&tp, NULL);
+
+        return static_cast<uint64_t> (tp.tv_sec * 1000000 + tp.tv_usec);
+      }
+
+      void
+      clock_highres::start (void)
+      {
+        previous_timestamp = get_current_micros ();
+      }
+
+      uint32_t
+      clock_highres::input_clock_frequency_hz (void)
+      {
+        // The posix system clock resolution is 1 us, so it makes no
+        // sense to assume a frequency higher than 1 MHz.
+        return 1000000;
+      }
+
+      uint32_t
+      clock_highres::cycles_per_tick (void)
+      {
+        uint64_t ts = get_current_micros ();
+        uint32_t delta = static_cast<uint32_t> (ts - previous_timestamp);
+
+        previous_timestamp = ts;
+
+        return delta;
+      }
+
+      uint32_t
+      clock_highres::cycles_since_tick (void)
+      {
+        uint64_t ts = get_current_micros ();
+        uint32_t delta = static_cast<uint32_t> (ts - previous_timestamp);
+
+        return delta;
+      }
+
     } /* namespace port */
   } /* namespace rtos */
 } /* namespace os */

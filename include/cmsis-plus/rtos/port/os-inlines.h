@@ -208,47 +208,6 @@ namespace os
 
       } /* namespace this_thread */
 
-      // ======================================================================
-
-      inline uint32_t
-      __attribute__((always_inline))
-      clock_highres::input_clock_frequency_hz (void)
-      {
-        // The posix system clock resolution is 1 us, so it makes no
-        // sense to assume a frequency higher than 1 MHz.
-        return 1000000;
-      }
-
-      inline uint32_t
-      __attribute__((always_inline))
-      clock_highres::cycles_per_tick (void)
-      {
-        return input_clock_frequency_hz () / rtos::clock_systick::frequency_hz;
-      }
-
-      inline uint32_t
-      __attribute__((always_inline))
-      clock_highres::cycles_since_tick (void)
-      {
-        struct timeval tp1;
-        gettimeofday (&tp1, NULL);
-
-        struct timeval tp2;
-        gettimeofday (&tp2, NULL);
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-
-        if (tp1.tv_usec > tp2.tv_usec)
-          {
-            return tp1.tv_usec + cycles_per_tick ();
-          }
-
-        return tp1.tv_usec;
-
-#pragma GCC diagnostic pop
-      }
-
     // ========================================================================
 
     } /* namespace port */
