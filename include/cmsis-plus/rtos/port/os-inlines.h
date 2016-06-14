@@ -92,15 +92,6 @@ namespace os
           trace::puts ("; non-preemptive.");
         }
 
-        inline result_t
-        __attribute__((always_inline))
-        initialize (void)
-        {
-          signal_nesting = 0;
-
-          return result::ok;
-        }
-
         inline bool
         __attribute__((always_inline))
         in_handler_mode (void)
@@ -142,12 +133,8 @@ namespace os
         __attribute__((always_inline))
         critical_section::enter (void)
         {
-          sigset_t set;
-          sigemptyset(&set);
-          sigaddset(&set, clock::signal_number);
-
           sigset_t old;
-          sigprocmask (SIG_BLOCK, &set, &old);
+          sigprocmask (SIG_BLOCK, &clock_set, &old);
 
           return sigismember(&old, clock::signal_number);
         }
@@ -157,11 +144,7 @@ namespace os
         __attribute__((always_inline))
         critical_section::exit (rtos::interrupts::status_t status)
         {
-          sigset_t set;
-          sigemptyset(&set);
-          sigaddset(&set, clock::signal_number);
-
-          sigprocmask (status ? SIG_BLOCK : SIG_UNBLOCK, &set, nullptr);
+          sigprocmask (status ? SIG_BLOCK : SIG_UNBLOCK, &clock_set, nullptr);
         }
 
         // ====================================================================
@@ -171,12 +154,8 @@ namespace os
         __attribute__((always_inline))
         uncritical_section::enter (void)
         {
-          sigset_t set;
-          sigemptyset(&set);
-          sigaddset(&set, clock::signal_number);
-
           sigset_t old;
-          sigprocmask (SIG_UNBLOCK, &set, &old);
+          sigprocmask (SIG_UNBLOCK, &clock_set, &old);
 
           return sigismember(&old, clock::signal_number);
         }
@@ -186,11 +165,7 @@ namespace os
         __attribute__((always_inline))
         uncritical_section::exit (rtos::interrupts::status_t status)
         {
-          sigset_t set;
-          sigemptyset(&set);
-          sigaddset(&set, clock::signal_number);
-
-          sigprocmask (status ? SIG_BLOCK : SIG_UNBLOCK, &set, nullptr);
+          sigprocmask (status ? SIG_BLOCK : SIG_UNBLOCK, &clock_set, nullptr);
         }
 
       } /* namespace interrupts */

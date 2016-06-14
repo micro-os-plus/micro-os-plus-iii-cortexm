@@ -99,8 +99,28 @@ namespace os
 
       // ----------------------------------------------------------------------
 
+      namespace interrupts
+      {
+        sigset_t clock_set;
+
+      } /* namespace interrupts */
+
+      // ----------------------------------------------------------------------
+
       namespace scheduler
       {
+
+        result_t
+        initialize (void)
+        {
+          signal_nesting = 0;
+
+          // Must be done before the first critical section.
+          sigemptyset(&interrupts::clock_set);
+          sigaddset(&interrupts::clock_set, clock::signal_number);
+
+          return result::ok;
+        }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"

@@ -90,11 +90,11 @@ namespace os
 
         // Initial value for the minimum stack size in bytes.
         constexpr std::size_t min_size_bytes =
-            OS_INTEGER_RTOS_MIN_STACK_SIZE_BYTES;
+        OS_INTEGER_RTOS_MIN_STACK_SIZE_BYTES;
 
         // Initial value for the default stack size in bytes.
         constexpr std::size_t default_size_bytes =
-            OS_INTEGER_RTOS_DEFAULT_STACK_SIZE_BYTES;
+        OS_INTEGER_RTOS_DEFAULT_STACK_SIZE_BYTES;
 
         constexpr element_t magic = 0xEFBEADDEEFBEADDE;
       } /* namespace stack */
@@ -105,6 +105,9 @@ namespace os
         using status_t = bool;
 
         constexpr status_t init_status = false;
+
+        extern sigset_t clock_set;
+
       } /* namespace interrupts */
 
       namespace clock
