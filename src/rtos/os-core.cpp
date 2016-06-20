@@ -157,7 +157,7 @@ namespace os
         void
         reschedule (void)
         {
-          if (rtos::scheduler::locked () || rtos::scheduler::in_handler_mode ())
+          if (rtos::scheduler::locked () || rtos::interrupts::in_handler_mode ())
             {
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
               trace::printf ("port::scheduler::%s() nop\n", __func__);

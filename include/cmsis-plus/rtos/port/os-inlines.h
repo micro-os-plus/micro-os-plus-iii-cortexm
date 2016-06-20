@@ -92,13 +92,6 @@ namespace os
           trace::puts ("; non-preemptive.");
         }
 
-        inline bool
-        __attribute__((always_inline))
-        in_handler_mode (void)
-        {
-          return (signal_nesting > 0);
-        }
-
         inline void
         __attribute__((always_inline))
         lock (rtos::scheduler::status_t status)
@@ -120,6 +113,13 @@ namespace os
 
       namespace interrupts
       {
+
+        inline bool
+        __attribute__((always_inline))
+        in_handler_mode (void)
+        {
+          return (signal_nesting > 0);
+        }
 
         inline bool
         __attribute__((always_inline))
