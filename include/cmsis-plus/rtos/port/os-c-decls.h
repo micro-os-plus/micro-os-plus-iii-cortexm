@@ -55,8 +55,13 @@
 #include <signal.h>
 #include <stdbool.h>
 
+// Must match port::clock::timestamp_t
 typedef uint64_t os_port_clock_timestamp_t;
+
+// Must match port::clock::duration_t
 typedef uint32_t os_port_clock_duration_t;
+
+// Must match port::clock::offset_t
 typedef uint64_t os_port_clock_offset_t;
 
 typedef struct
