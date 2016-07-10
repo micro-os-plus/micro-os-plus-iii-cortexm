@@ -184,7 +184,7 @@ namespace os
 
               old_thread = rtos::scheduler::current_thread_;
               if ((old_thread->sched_state_ == rtos::thread::state::running)
-                  || (old_thread->sched_state_ == rtos::thread::state::waiting)
+                  || (old_thread->sched_state_ == rtos::thread::state::suspended)
                   || (old_thread->sched_state_ == rtos::thread::state::ready))
                 {
                   save = true;
