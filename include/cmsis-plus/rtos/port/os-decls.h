@@ -89,10 +89,10 @@ namespace os
       namespace stack
       {
         // Assume 64-bits core.
-        using element_t = uint64_t;
+        using element_t = os_port_thread_stack_element_t;
 
         // Align stack to 8 bytes.
-        using allocation_element_t = uint64_t;
+        using allocation_element_t = os_port_thread_stack_allocation_element_t;
 
         // Initial value for the minimum stack size in bytes.
         constexpr std::size_t min_size_bytes =
