@@ -157,7 +157,8 @@ namespace os
         void
         reschedule (void)
         {
-          if (rtos::scheduler::locked () || rtos::interrupts::in_handler_mode ())
+          if (rtos::scheduler::locked ()
+              || rtos::interrupts::in_handler_mode ())
             {
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
               trace::printf ("port::scheduler::%s() nop\n", __func__);
@@ -183,16 +184,15 @@ namespace os
               rtos::interrupts::critical_section ics;
 
               old_thread = rtos::scheduler::current_thread_;
-              if ((old_thread->sched_state_ == rtos::thread::state::running)
-                  || (old_thread->sched_state_ == rtos::thread::state::suspended)
-                  || (old_thread->sched_state_ == rtos::thread::state::ready))
+              if ((old_thread->state_ == rtos::thread::state::running)
+                  || (old_thread->state_ == rtos::thread::state::suspended)
+                  || (old_thread->state_ == rtos::thread::state::ready))
                 {
                   save = true;
                 }
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
               trace::printf ("port::scheduler::%s() old %s %d %d\n", __func__,
-                             old_thread->name (), old_thread->sched_state_,
-                             save);
+                             old_thread->name (), old_thread->state_, save);
 #endif
 
               old_ctx =
