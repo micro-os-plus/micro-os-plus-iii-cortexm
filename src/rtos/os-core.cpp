@@ -110,6 +110,12 @@ namespace os
       namespace scheduler
       {
 
+        // --------------------------------------------------------------------
+
+        state_t lock_state;
+
+        // --------------------------------------------------------------------
+
         result_t
         initialize (void)
         {
@@ -121,6 +127,8 @@ namespace os
 
           return result::ok;
         }
+
+        // --------------------------------------------------------------------
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -145,6 +153,8 @@ namespace os
                          rtos::scheduler::current_thread_->name ());
 #endif
 
+          lock_state = state::init;
+
 #if defined NDEBUG
           setcontext (new_context);
 #else
@@ -153,6 +163,30 @@ namespace os
 #endif
           abort ();
         }
+
+        // --------------------------------------------------------------------
+
+        state_t
+        locked (state_t state)
+        {
+#if defined(OS_TRACE_RTOS_SCHEDULER)
+          trace::printf ("port::scheduler::%s(%d) \n", __func__, state);
+#endif
+          os_assert_throw(!interrupts::in_handler_mode (), EPERM);
+
+          state_t tmp;
+
+            {
+              rtos::interrupts::critical_section ics;
+
+              tmp = lock_state;
+              lock_state = state;
+            }
+
+          return tmp;
+        }
+
+        // --------------------------------------------------------------------
 
         void
         reschedule (void)
@@ -249,6 +283,9 @@ namespace os
         }
 
 #pragma GCC diagnostic pop
+
+        // --------------------------------------------------------------------
+
       } /* namespace scheduler */
 
       // ----------------------------------------------------------------------

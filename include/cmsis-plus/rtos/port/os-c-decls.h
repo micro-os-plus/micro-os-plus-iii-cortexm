@@ -69,6 +69,8 @@ typedef struct
   ucontext_t ucontext; //
 } os_port_thread_context_t;
 
+typedef bool os_port_scheduler_state_t;
+
 // Signal set (true if signal blocked)
 typedef bool os_port_irq_status_t;
 

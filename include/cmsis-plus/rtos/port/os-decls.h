@@ -116,6 +116,21 @@ namespace os
 
       } /* namespace interrupts */
 
+      namespace scheduler
+      {
+        using state_t = bool;
+
+        namespace state
+        {
+          constexpr state_t locked = true;
+          constexpr state_t unlocked = false;
+          constexpr state_t init = unlocked;
+        } /* namespace state */
+
+        extern state_t lock_state;
+
+      } /* namespace scheduler */
+
       namespace clock
       {
         constexpr int signal_number = SIGALRM;
