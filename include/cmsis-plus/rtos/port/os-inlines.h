@@ -94,13 +94,6 @@ namespace os
 
         inline void
         __attribute__((always_inline))
-        preempt (void)
-        {
-          ;
-        }
-
-        inline void
-        __attribute__((always_inline))
         lock (rtos::scheduler::status_t status)
         {
           ;
