@@ -108,9 +108,12 @@ namespace os
       namespace interrupts
       {
         // True if signal blocked
-        using status_t = bool;
+        using state_t = os_port_irq_state_t;
 
-        constexpr status_t init_status = false;
+        namespace state
+        {
+          constexpr state_t init = false;
+        } /* namespace state */
 
         extern sigset_t clock_set;
 
@@ -118,7 +121,7 @@ namespace os
 
       namespace scheduler
       {
-        using state_t = bool;
+        using state_t = os_port_scheduler_state_t;
 
         namespace state
         {

@@ -143,7 +143,7 @@ namespace os
         }
 
         // Enter an IRQ critical section
-        inline rtos::interrupts::status_t
+        inline rtos::interrupts::state_t
         __attribute__((always_inline))
         critical_section::enter (void)
         {
@@ -156,15 +156,15 @@ namespace os
         // Exit an IRQ critical section
         inline void
         __attribute__((always_inline))
-        critical_section::exit (rtos::interrupts::status_t status)
+        critical_section::exit (rtos::interrupts::state_t state)
         {
-          sigprocmask (status ? SIG_BLOCK : SIG_UNBLOCK, &clock_set, nullptr);
+          sigprocmask (state ? SIG_BLOCK : SIG_UNBLOCK, &clock_set, nullptr);
         }
 
         // ====================================================================
 
         // Enter an IRQ uncritical section
-        inline rtos::interrupts::status_t
+        inline rtos::interrupts::state_t
         __attribute__((always_inline))
         uncritical_section::enter (void)
         {
@@ -177,9 +177,9 @@ namespace os
         // Exit an IRQ critical section
         inline void
         __attribute__((always_inline))
-        uncritical_section::exit (rtos::interrupts::status_t status)
+        uncritical_section::exit (rtos::interrupts::state_t state)
         {
-          sigprocmask (status ? SIG_BLOCK : SIG_UNBLOCK, &clock_set, nullptr);
+          sigprocmask (state ? SIG_BLOCK : SIG_UNBLOCK, &clock_set, nullptr);
         }
 
       } /* namespace interrupts */

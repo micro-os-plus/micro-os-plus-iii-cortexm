@@ -72,7 +72,7 @@ typedef struct
 typedef bool os_port_scheduler_state_t;
 
 // Signal set (true if signal blocked)
-typedef bool os_port_irq_status_t;
+typedef bool os_port_irq_state_t;
 
 typedef uint64_t os_port_thread_stack_element_t;
 typedef uint64_t os_port_thread_stack_allocation_element_t;
