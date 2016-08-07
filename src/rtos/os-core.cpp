@@ -232,7 +232,7 @@ namespace os
               old_ctx =
                   reinterpret_cast<ucontext_t*> (&old_thread->context_.port_.ucontext);
 
-              rtos::scheduler::_switch_threads ();
+              rtos::scheduler::internal_switch_threads ();
 
               new_ctx =
                   reinterpret_cast<ucontext_t*> (&rtos::scheduler::current_thread_->context_.port_.ucontext);
@@ -284,7 +284,7 @@ namespace os
 
 #pragma GCC diagnostic pop
 
-        // --------------------------------------------------------------------
+      // ----------------------------------------------------------------------
 
       } /* namespace scheduler */
 
