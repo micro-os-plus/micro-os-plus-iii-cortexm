@@ -37,7 +37,7 @@
 // Better be the last, to undef putchar()
 #include <cmsis-plus/diag/trace.h>
 
-#include <cmsis-plus/iso/malloc.h>
+#include <cmsis-plus/estd/malloc.h>
 
 #include <sys/time.h>
 

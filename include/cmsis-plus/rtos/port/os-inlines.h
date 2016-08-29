@@ -56,7 +56,7 @@
 #include <unistd.h>
 
 #include <cmsis-plus/diag/trace.h>
-#include <cmsis-plus/iso/malloc.h>
+#include <cmsis-plus/estd/malloc.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
