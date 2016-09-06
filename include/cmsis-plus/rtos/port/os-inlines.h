@@ -29,8 +29,8 @@
  * This file is part of the CMSIS++ proposal, intended as a CMSIS
  * replacement for C++ applications.
  *
- * If contains the implementation for all objects, using the
- * FreeRTOS API.
+ * If contains the scheduler implementation that uses
+ * functions from the POSIX API (macOS and GNU/Linux).
  *
  * This file is included in all src/os-*.cpp files.
  */
@@ -56,7 +56,6 @@
 #include <unistd.h>
 
 #include <cmsis-plus/diag/trace.h>
-#include <cmsis-plus/estd/malloc.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"

@@ -34,11 +34,6 @@
 #include <cmsis-plus/rtos/os.h>
 #include <cmsis-plus/rtos/port/os-inlines.h>
 
-// Better be the last, to undef putchar()
-#include <cmsis-plus/diag/trace.h>
-
-#include <cmsis-plus/estd/malloc.h>
-
 #include <sys/time.h>
 
 uint32_t signal_nesting;
@@ -169,9 +164,6 @@ namespace os
         state_t
         locked (state_t state)
         {
-#if defined(OS_TRACE_RTOS_SCHEDULER)
-          trace::printf ("port::scheduler::%s(%d) \n", __func__, state);
-#endif
           os_assert_throw(!interrupts::in_handler_mode (), EPERM);
 
           state_t tmp;
