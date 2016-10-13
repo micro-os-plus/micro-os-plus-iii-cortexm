@@ -7,8 +7,7 @@ An xPack with POSIX architecture specific files.
 [POSIX Architecture](https://github.com/micro-os-plus/posix-arch) package details:
 
 * type: [xcdl](http://xcdl.github.io)
-* yotta name: `ilg-posix-arch`
-* yotta repo: http://yotta.mbed.com/#/module/ilg-posix-arch/0.1.1
+* name: `ilg/posix-arch`
 * git repo: https://github.com/micro-os-plus/posix-arch.git
 * homepage: https://github.com/micro-os-plus/posix-arch
 * latest archive: https://github.com/micro-os-plus/posix-arch/archive/xpack.zip
@@ -40,21 +39,41 @@ An xPack with POSIX architecture specific files.
 ## Keywords
 
 * posix
-* io
+* architecture
 * portable
 
 ## License
 
-* [spdx](http://spdx.org/licenses/): LGPL-3.0
+* [spdx](http://spdx.org/licenses/): MIT
 
 --- 
 ## Documentation
 
-TBD
+This xPack provides the implementation for the µOS++ scheduler, running on a synthetic POSIX platform, like macOS and GNU/Linux.
+
+## Configuration
+
+To include this µOS++ port in a project, consider the following details.
+
+### Include folders
+
+- `include` 
+ 
+### Source folders
+
+- `src` 
+
+### Symbols
+
+- `_XOPEN_SOURCE=700L`
+
+## Limitations
+
+When running on a synthetic POSIX platform, the µOS++ scheduler runs in cooperative mode only.
 
 ## Tests
 
-TBD
+None.
 
 
 --- 
