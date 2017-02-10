@@ -22,6 +22,7 @@
 
 #if defined(TRACE)
 
+#include <cmsis-plus/os-app-config.h>
 #include <cmsis-plus/diag/trace.h>
 #include <cstddef>
 #include <unistd.h>
@@ -47,7 +48,7 @@ namespace os
     {
 #if defined(OS_USE_TRACE_POSIX_STDOUT)
       return ::write (1, buf, nbyte); // Forward to STDOUT.
-#else
+#elif defined(OS_USE_TRACE_POSIX_STDERR)
       return ::write (2, buf, nbyte); // Forward to STDERR.
 #endif
     }
