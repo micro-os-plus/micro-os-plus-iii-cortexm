@@ -50,6 +50,10 @@ namespace os
       return ::write (1, buf, nbyte); // Forward to STDOUT.
 #elif defined(OS_USE_TRACE_POSIX_STDERR)
       return ::write (2, buf, nbyte); // Forward to STDERR.
+#else
+#warning "No trace output channel."
+      buf = buf;
+      return nbyte;
 #endif
     }
 
