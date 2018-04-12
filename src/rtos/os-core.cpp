@@ -75,7 +75,7 @@ namespace os
 
         // Remove the parent link.
         // TODO: maybe use this to link to exit code.
-        ctx->uc_link = 0;
+        ctx->uc_link = nullptr;
 
         // Configure the new stack to default values.
         ctx->uc_stack.ss_sp = th_ctx->stack ().bottom ();
@@ -361,7 +361,7 @@ namespace os
         tv.it_interval.tv_usec = 0;//1000000 / rtos::clock_systick::frequency_hz;
 #endif
 
-        if (setitimer (ITIMER_REAL, &tv, NULL) != 0)
+        if (setitimer (ITIMER_REAL, &tv, nullptr) != 0)
           {
             trace::printf ("port::clock_systick::%s() setitimer() failed\n",
                            __func__);
@@ -396,7 +396,7 @@ namespace os
       get_current_micros (void)
       {
         struct timeval tp;
-        gettimeofday (&tp, NULL);
+        gettimeofday (&tp, nullptr);
 
         return static_cast<uint64_t> (tp.tv_sec * 1000000 + tp.tv_usec);
       }
