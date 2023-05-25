@@ -604,7 +604,8 @@ namespace os
         __attribute__((always_inline))
         save_on_stack (void)
         {
-          register stack::element_t* sp_;
+          // warning: ISO C++17 does not allow 'register' storage class specifier [-Wregister]
+          /* register */ stack::element_t* sp_;
 
           asm volatile
           (
