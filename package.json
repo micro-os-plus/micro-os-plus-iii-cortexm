@@ -1,0 +1,56 @@
+{
+  "name": "@micro-os-plus/micro-os-plus-iii-cortexm",
+  "version": "1.0.0-pre.1",
+  "description": "A source code library with µOS++ Cortex-M port",
+  "main": "",
+  "scripts": {
+    "npm-install": "npm install",
+    "pack": "npm pack",
+    "version-patch": "npm version patch",
+    "version-minor": "npm version minor",
+    "postversion": "git push origin --all && git push origin --tags",
+    "git-log": "git log --pretty='%cd * %h %s' --date=short"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/micro-os-plus/micro-os-plus-iii-cortexm.git"
+  },
+  "homepage": "https://github.com/micro-os-plus/micro-os-plus-iii-cortexm",
+  "bugs": {
+    "url": "https://github.com/micro-os-plus/micro-os-plus-iii-cortexm/issues"
+  },
+  "keywords": [
+    "xpack",
+    "posix",
+    "µOS++",
+    "micro-os-plus",
+    "portable"
+  ],
+  "author": {
+    "name": "Liviu Ionescu",
+    "email": "ilg@livius.net",
+    "url": "https://github.com/ilg-ul"
+  },
+  "license": "MIT",
+  "config": {},
+  "dependencies": {},
+  "devDependencies": {},
+  "xpack": {
+    "minimumXpmRequired": "0.16.0",
+    "dependencies": {},
+    "$dependenciesUrls": [
+      "https://github.com/micro-os-plus",
+      "https://github.com/xpacks",
+      "https://github.com/xpack-dev-tools"
+    ],
+    "devDependencies": {},
+    "properties": {},
+    "actions": {
+      "install": [
+        "npm install",
+        "xpm install"
+      ]
+    },
+    "buildConfigurations": {}
+  }
+}

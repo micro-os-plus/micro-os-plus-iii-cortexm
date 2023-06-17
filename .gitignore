@@ -9,3 +9,9 @@ test-*/
 upload.tar.gz
 yotta_modules/
 yotta_targets/
+
+node_modules/
+xpacks/
+*.tgz
+.vscode/
+

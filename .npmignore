@@ -1,0 +1,17 @@
+.DS_Store
+.cproject
+.project
+.settings/
+.yotta.json
+Debug/
+NOTICE.md
+Release/
+Thumbs.db
+build/
+test*/
+*.tgz
+node_modules/
+xpack/
+scripts/
+.vscode/
+
