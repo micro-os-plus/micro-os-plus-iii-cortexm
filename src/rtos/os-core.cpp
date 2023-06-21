@@ -250,8 +250,8 @@ namespace os
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
         trace::printf ("port::context::%s(%p)\n", __func__, context);
 #endif
-        class rtos::thread::context* th_ctx =
-            static_cast<class rtos::thread::context*> (context);
+        /* class */ rtos::thread::context* th_ctx =
+            static_cast</* class */ rtos::thread::context*> (context);
 
         class rtos::thread::stack& stack = th_ctx->stack ();
 
@@ -259,7 +259,7 @@ namespace os
 
         // Be sure the stack is large enough to hold at least
         // two exception frames.
-        assert((p - stack.bottom ()) > (int )(2 * sizeof(stack::frame_t)));
+        assert((p - stack.bottom ()) > static_cast<int> (2 * sizeof(stack::frame_t)));
 
         p -= (sizeof(stack::frame_t) / sizeof(rtos::thread::stack::element_t));
 
@@ -269,7 +269,7 @@ namespace os
         // var_args() will fail (for example printf() does not floats/doubles).
         if ((reinterpret_cast<uintptr_t> (p) & 3) != 0)
           {
-            p = (rtos::thread::stack::element_t*) (((int) p) & (~3));
+            p = reinterpret_cast<rtos::thread::stack::element_t*> ((reinterpret_cast<int> ( p)) & (~3));
           }
 
         if ((reinterpret_cast<uintptr_t> (p) & 7) == 0)
@@ -287,7 +287,7 @@ namespace os
 
         // The address of the trampoline code. // PC/R15 +14*4=60
         f->r15_pc =
-            (rtos::thread::stack::element_t) (((ptrdiff_t) func) & (~1));
+            static_cast<rtos::thread::stack::element_t> ((reinterpret_cast<ptrdiff_t> ( func)) & (~1));
 
         // Link register // LR/R14 +13*4=56
 #if defined(OS_BOOL_RTOS_PORT_CONTEXT_CREATE_ZERO_LR)
@@ -296,7 +296,7 @@ namespace os
         // 0x0 looks odd in the debugger, so try to hide it.
         // In Eclipse using 'func+2' will make the stack trace
         // start with 'func' (don't ask why).
-        f->r14_lr = (rtos::thread::stack::element_t) (((ptrdiff_t) func + 2));
+        f->r14_lr = static_cast<rtos::thread::stack::element_t> ((reinterpret_cast<ptrdiff_t> ( func) + 2));
 #endif
         // R13 is the SP; it is not present in the frame,
         // it is loaded separately as PSP.
@@ -309,7 +309,7 @@ namespace os
         f->r3 = 0x33333333 + 0x00010203; // R3 +11*4=48
         f->r2 = 0x22222222 + 0x00010203; // R2 +10*4=44
         f->r1 = 0x11111111 + 0x00010203; // R1 +9*4=40
-        f->r0 = (rtos::thread::stack::element_t) args; // R0 +8*4=36
+        f->r0 = reinterpret_cast<rtos::thread::stack::element_t> (args); // R0 +8*4=36
 
         // This frame does not include initial FPU registers.
         // bit 4: 1 (8 words), 0 (26 words)
@@ -332,7 +332,7 @@ namespace os
         th_ctx->port_.stack_ptr = p;
 
         // Guarantee that the stack is properly aligned.
-        assert((((int )(&f->r0)) & 7) == 0);
+        assert(((reinterpret_cast<int>(&f->r0)) & 7) == 0);
       }
 
       /**
@@ -420,9 +420,12 @@ namespace os
           // The main trick is to switch the current SP from MSP to PSP
           // without breaking the running code. This is simply done by
           // initialising PSP with the same value as MSP.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated"
           __set_PSP (__get_MSP ());
           // Configure thread mode to use PSP (CONTROL.SPSEL=1).
           __set_CONTROL (__get_CONTROL () | CONTROL_SPSEL_Msk);
+#pragma GCC diagnostic pop
 
           // Barrier, as usual after all changes to CONTROL.
           __ISB ();
@@ -438,7 +441,11 @@ namespace os
 #if defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
 
 #if !defined(OS_DISABLE_CORTEXM_SET_MSP_VIA_VTOR)
-          __set_MSP (*((uint32_t*) SCB->VTOR));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wdeprecated"
+          __set_MSP (*(reinterpret_cast<uint32_t*> (SCB->VTOR)));
+#pragma GCC diagnostic pop
 #endif /* !defined(OS_DISABLE_CORTEXM_SET_MSP_VIA_VTOR) */
 
 #elif defined(__ARM_ARCH_6M__)
@@ -457,7 +464,7 @@ namespace os
           uint32_t* volatile vectors_addr = 0x00000000;
           __set_MSP (*vectors_addr);
 #else
-          __set_MSP (*((uint32_t*) 0x00000000));
+          __set_MSP (*(static_cast<uint32_t*> ( 0x00000000)));
 #endif
 
 #else
@@ -472,7 +479,7 @@ namespace os
           // Set the beginning address and size of the interrupt stack.
           rtos::interrupts::stack ()->set (
               reinterpret_cast<stack::element_t*> (&_Heap_Limit),
-              (&__stack - &_Heap_Limit) * sizeof(__stack));
+              static_cast<size_t>(&__stack - &_Heap_Limit) * sizeof(__stack));
 
           // Set PendSV interrupt priority to the lowest level (highest value).
           NVIC_SetPriority (PendSV_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL);
@@ -486,7 +493,7 @@ namespace os
           memset (&fake_thread, 0, sizeof(os_thread_t));
 
           fake_thread.name = "fake_thread";
-          rtos::thread* pth = (rtos::thread*) &fake_thread;
+          rtos::thread* pth = reinterpret_cast<rtos::thread*> ( &fake_thread);
 
           // Make the fake thread look like the current thread.
           rtos::scheduler::current_thread_ = pth;
@@ -570,8 +577,11 @@ namespace os
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
           trace::printf ("port::scheduler::%s()\n", __func__);
 #endif
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
           // Set PendSV to request a context switch.
           SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
+#pragma GCC diagnostic pop
 
           // The DSB/ISB are recommended by ARM after programming
           // the control registers.
@@ -812,7 +822,10 @@ namespace os
           // This shouldn't be a problem for this scheduler,
           // but without it the semaphore stress test sometimes fails
           // on debug, so better safe than sorry.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
           SCB->ICSR = SCB_ICSR_PENDSVCLR_Msk;
+#pragma GCC diagnostic pop
 
           rtos::thread* old_thread = rtos::scheduler::current_thread_;
 

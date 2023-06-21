@@ -181,7 +181,7 @@ namespace os
           if (exception_number > 0)
             {
               uint32_t prio = NVIC_GetPriority (
-                  (IRQn_Type) (exception_number - 16));
+                  static_cast<IRQn_Type> (exception_number - 16));
               return (prio
                   >= OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY);
             }
@@ -393,6 +393,8 @@ namespace os
         return SystemCoreClock;
       }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
       inline uint32_t
       __attribute__((always_inline))
       clock_highres::cycles_per_tick (void)
@@ -433,6 +435,7 @@ namespace os
 
         return load_value - val;
       }
+#pragma GCC diagnostic pop
 
     // ======================================================================
 
