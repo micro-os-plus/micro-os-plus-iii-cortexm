@@ -88,11 +88,11 @@ namespace os
 #else
           trace::printf(", WFI");
 #endif
-          trace::puts (".");
+          trace::puts ("");
 
           // At this stage the system clock should have already been configured
           // at high speed by __initialise_hardware().
-          trace::printf ("System clock: %u Hz.\n", SystemCoreClock);
+          trace::printf ("System clock: %u Hz\n", SystemCoreClock);
         }
 
         inline port::scheduler::state_t
