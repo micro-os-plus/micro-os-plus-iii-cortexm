@@ -464,7 +464,10 @@ namespace os
           uint32_t* volatile vectors_addr = 0x00000000;
           __set_MSP (*vectors_addr);
 #else
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated"
           __set_MSP (*(static_cast<uint32_t*> ( 0x00000000)));
+#pragma GCC diagnostic pop
 #endif
 
 #else
