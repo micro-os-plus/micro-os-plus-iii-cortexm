@@ -26,6 +26,7 @@
 #if defined(OS_USE_OS_APP_CONFIG_H)
 #include <cmsis-plus/os-app-config.h>
 #endif
+
 #include <cmsis-plus/rtos/port/os-c-decls.h>
 
 #if !defined(OS_INTEGER_SYSTICK_FREQUENCY_HZ)

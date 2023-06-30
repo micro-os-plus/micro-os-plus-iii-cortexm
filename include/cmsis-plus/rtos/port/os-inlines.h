@@ -28,6 +28,7 @@
 #if defined(OS_USE_OS_APP_CONFIG_H)
 #include <cmsis-plus/os-app-config.h>
 #endif
+
 #include <cmsis-plus/rtos/os-c-decls.h>
 
 // ----------------------------------------------------------------------------
