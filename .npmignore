@@ -1,17 +1,53 @@
-.DS_Store
-.cproject
-.project
-.settings/
-.yotta.json
-Debug/
-NOTICE.md
-Release/
-Thumbs.db
-build/
-test*/
-*.tgz
+# Git
+.git/
+.github/
+.gitignore
+.gitmodules
+
+# npm
 node_modules/
-xpack/
-scripts/
+.npm/
+*.tgz
+
+# xpm
+xpacks/
+
+# Windows
+Thumbs.db
+
+# macOS
+.DS_Store
+
+# Visual Studio Code
 .vscode/
 
+# Eclipse
+.settings/
+Debug*/
+Release*/
+*.launch
+.project
+.cproject
+
+# Builds
+test*/
+build/
+
+# Misc
+# patches/
+# pkgconfig/
+# scripts/
+README-*
+NOTES.md
+# CHANGELOG.*
+# LICENSE-*
+.appveyor.yml
+.travis.yml
+.clang-format
+
+.gitkeep
+
+website
+inspiration
+
+# End
