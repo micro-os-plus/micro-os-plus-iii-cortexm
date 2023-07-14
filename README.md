@@ -2,7 +2,7 @@
 [![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/micro-os-plus/micro-os-plus-iii-cortexm)](https://github.com/micro-os-plus/micro-os-plus-iii-cortexm/tags/)
 [![license](https://img.shields.io/github/license/micro-os-plus/micro-os-plus-iii-cortexm)](https://github.com/micro-os-plus/micro-os-plus-iii-cortexm/blob/xpack/LICENSE)
 
-# A source code library with the µOS++ Cortex-M port
+# xpm/npm package with the µOS++ Cortex-M port
 
 This project provides support for running µOS++ on Cortex-M devices.
 
@@ -19,15 +19,29 @@ For maintainer info, please see the
 
 ## Install
 
-As a source library xPack, the easiest way to add it to a project is via
-**xpm**, but it can also be used as any Git project, for example as a submodule.
+As a source code library, this project can be integrated into another project
+in the traditional way,
+by either copying the relevant files into the target project, or by linking
+the entire project as a Git submodule.
 
-### Prerequisites
+However, things can be further automated and the most convenient way is
+to **add it as a dependency** to the project via **xpm**.
+
+### Install with xpm/npm
+
+Along with the source files, this project also includes a
+`package.json` file with the metadata that allows it to be identified as an
+**xpm/npm** package so that it can be directly installed from GitHub.
+
+#### Prerequisites
 
 A recent [xpm](https://xpack.github.io/xpm/),
-which is a portable [Node.js](https://nodejs.org/) command line application.
+which is a portable [Node.js](https://nodejs.org/) command line application
+that complements [npm](https://docs.npmjs.com)
+with several extra features specific to
+**C/C++ projects**.
 
-It is recommended to update to the latest version with:
+It is recommended to install/update to the latest version with:
 
 ```sh
 npm install --global xpm@latest
@@ -36,24 +50,36 @@ npm install --global xpm@latest
 For details please follow the instructions in the
 [xPack install](https://xpack.github.io/install/) page.
 
-### xpm
+Warning: Be sure **xpm** is not installed with administrative rights.
 
-This package is available as
-`@micro-os-plus/micro-os-plus-iii-cortexm` from GitHub.
+#### xpm
+
+This project can be installed as a package from GitHub with:
 
 ```sh
 cd my-project
 xpm init # Unless a package.json is already present
 
-xpm install github:micro-os-plus/micro-os-plus-iii-cortexm
+xpm install github:micro-os-plus/micro-os-plus-iii-cortexm#v1.0.0 --save-dev --copy
 
 ls -l xpacks/@micro-os-plus/micro-os-plus-iii-cortexm
 ```
 
-### Git submodule
+#### npm
 
-If, for any reason, **xpm** is not available, the next recommended
-solution is to link it as a Git submodule below an `xpacks` folder.
+The package can also be installed with [npm](https://docs.npmjs.com)
+or related, but
+the features specific to C/C++ projects will not be available;
+therefore, at least for consistency reasons, it is recommended
+to use **xpm**.
+
+### Add as Git submodule
+
+Besides manually copying the relevant files to the target
+project, which will later require extra maintenance efforts to keep the
+project up to date, a more convenient
+solution is to link the entire project as a **Git submodule**,
+for example below an `xpacks` folder:
 
 ```sh
 cd my-project
@@ -87,13 +113,16 @@ The **micro-os-plus-iii-cortexm** source library is fully functional,
 but starting with mid 2023 it was marked as end-of-life and
 is not recommended for new designs.
 
+A new package will be available in the `@xpack-3rd-party` scope,
+as part of µOS++ IVe.
+
 ### Build & integration info
 
 The project is written in C/C++ and it is expected
 to be used in C and C++ projects.
 
-The source code was compiled with GCC 11, clang 12, clang 13
-arm-none-eabi-gcc 11, and should be warning free.
+The source code was compiled with GCC 11/12, clang 12/13/14/15
+arm-none-eabi-gcc 12, and should be warning free.
 
 To ease the integration of this package into user projects, there
 are already made CMake configuration files (see below).
@@ -160,18 +189,6 @@ target_link_libraries(your-target PRIVATE
 ### Tests
 
 - none
-
-## Change log - incompatible changes
-
-According to [semver](https://semver.org) rules:
-
-> Major version X (X.y.z | X > 0) MUST be incremented if any
-backwards incompatible changes are introduced to the public API.
-
-The incompatible changes, in reverse chronological order,
-are:
-
-- v1.x: the original code.
 
 ## License
 
