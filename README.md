@@ -113,7 +113,7 @@ The **micro-os-plus-iii-cortexm** source library is fully functional,
 but starting with mid 2023 it was marked as end-of-life and
 is not recommended for new designs.
 
-A new package will be available in the `@xpack-3rd-party` scope,
+A new package will be available
 as part of µOS++ IVe.
 
 ### Build & integration info
