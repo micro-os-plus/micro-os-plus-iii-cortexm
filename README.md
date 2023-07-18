@@ -2,11 +2,11 @@
 [![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/micro-os-plus/micro-os-plus-iii-cortexm)](https://github.com/micro-os-plus/micro-os-plus-iii-cortexm/tags/)
 [![license](https://img.shields.io/github/license/micro-os-plus/micro-os-plus-iii-cortexm)](https://github.com/micro-os-plus/micro-os-plus-iii-cortexm/blob/xpack/LICENSE)
 
-# An xpm/npm package with the µOS++ Cortex-M port
+# A source code library with the µOS++ Cortex-M port (an xpm/npm package)
 
 This project provides support for running µOS++ on Cortex-M devices.
 
-The project is hosted on GitHub as
+The open-source project is hosted on GitHub as
 [micro-os-plus/micro-os-plus-iii-cortexm](https://github.com/micro-os-plus/micro-os-plus-iii-cortexm).
 
 ## Maintainer info
@@ -105,7 +105,11 @@ into `xpack`.
 
 ## Developer info
 
-TBD
+### Overview
+
+The µOS++ IIIe source code is split between a portable part
+and platform specific code (like Cortex-M, this project).
+Applications must include both.
 
 ### Status
 
@@ -170,7 +174,7 @@ dependency with:
 ```cmake
 target_link_libraries(your-target PRIVATE
 
-  micro-os-plus::micro-os-plus-iii-cortexm
+  micro-os-plus::iii-cortexm
 )
 ```
 
@@ -182,7 +186,7 @@ target_link_libraries(your-target PRIVATE
 
 - none
 
-#### Limitations
+### Limitations
 
 - none
 
