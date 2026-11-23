@@ -247,23 +247,20 @@ namespace os
         rtos::thread::stack::element_t* p = stack.top ();
 
         // Be sure the stack is large enough to hold at least
-        // two exception frames.
-        assert ((p - stack.bottom ())
-                > static_cast<int> (2 * sizeof (stack::frame_t)));
+        // two exception frames (compare bytes with bytes).
+        assert (static_cast<std::size_t> (p - stack.bottom ())
+                    * sizeof (rtos::thread::stack::element_t)
+                > 2 * sizeof (stack::frame_t));
 
         p -= (sizeof (stack::frame_t)
               / sizeof (rtos::thread::stack::element_t));
 
-        // Align the frame to 8 bytes than leave one more word for the extra
-        // stack element, r14_exec_return, which is the 9th.
+        // The frame must start at an address 4 modulo 8, so that the
+        // hardware part (from r0, after the 9 words saved by the context
+        // switch) is 8-byte aligned; `p` is always 4-byte aligned, since
+        // the core aligns the stack bottom to 8 bytes.
         // Note: if the thread stack is not aligned at an 8 byte boundary,
         // var_args() will fail (for example printf() does not floats/doubles).
-        if ((reinterpret_cast<uintptr_t> (p) & 3) != 0)
-          {
-            p = reinterpret_cast<rtos::thread::stack::element_t*> (
-                (reinterpret_cast<int> (p)) & (~3));
-          }
-
         if ((reinterpret_cast<uintptr_t> (p) & 7) == 0)
           {
             --p;
@@ -326,7 +323,7 @@ namespace os
         th_ctx->port_.stack_ptr = p;
 
         // Guarantee that the stack is properly aligned.
-        assert (((reinterpret_cast<int> (&f->r0)) & 7) == 0);
+        assert ((reinterpret_cast<uintptr_t> (&f->r0) & 7) == 0);
       }
 
       /**
