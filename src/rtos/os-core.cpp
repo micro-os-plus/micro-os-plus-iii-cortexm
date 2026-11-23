@@ -678,7 +678,8 @@ namespace os
     && defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
 
           pri = __get_BASEPRI ();
-          __set_BASEPRI_MAX (
+          // With the Cortex-M7 r0p1 erratum 837070 workaround.
+          interrupts::internal::raise_basepri_max (
               OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY
               << ((8 - __NVIC_PRIO_BITS)));
 

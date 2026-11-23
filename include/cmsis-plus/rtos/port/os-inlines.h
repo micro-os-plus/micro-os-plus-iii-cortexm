@@ -130,6 +130,55 @@ namespace os
 
       namespace interrupts
       {
+// Mainline: v7-M, v7E-M, v8-M Main, v8.1-M (M3, M4, M7, M33, ...).
+#if (__ARM_ARCH_ISA_THUMB == 2) \
+    && defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
+
+        namespace internal
+        {
+          // Cortex-M7 r0p1 erratum 837070: a write that raises BASEPRI
+          // may not take effect immediately, so an interrupt that should
+          // be masked can still be taken right after it. Arm's workaround
+          // is to raise it with interrupts disabled. PRIMASK is saved and
+          // restored (not just enabled), since critical sections may also
+          // run with interrupts already disabled.
+          // Enabled for all Cortex-M7 builds; parts with r1p0 or later
+          // (STM32F76x/F77x, STM32H7) may define
+          // OS_DISABLE_CORTEXM7_ERRATUM_837070_WORKAROUND.
+
+          // Raise BASEPRI with BASEPRI_MAX (written only if it raises).
+          inline void __attribute__ ((always_inline))
+          raise_basepri_max (uint32_t value)
+          {
+#if (__CORTEX_M == 7) \
+    && !defined(OS_DISABLE_CORTEXM7_ERRATUM_837070_WORKAROUND)
+            uint32_t primask = __get_PRIMASK ();
+            __disable_irq ();
+            __set_BASEPRI_MAX (value);
+            __set_PRIMASK (primask);
+#else
+            __set_BASEPRI_MAX (value);
+#endif
+          }
+
+          // Set BASEPRI to a value that may raise it.
+          inline void __attribute__ ((always_inline))
+          raise_basepri (uint32_t value)
+          {
+#if (__CORTEX_M == 7) \
+    && !defined(OS_DISABLE_CORTEXM7_ERRATUM_837070_WORKAROUND)
+            uint32_t primask = __get_PRIMASK ();
+            __disable_irq ();
+            __set_BASEPRI (value);
+            __set_PRIMASK (primask);
+#else
+            __set_BASEPRI (value);
+#endif
+          }
+        } /* namespace internal */
+
+#endif
+
         inline bool __attribute__ ((always_inline))
         in_handler_mode (void)
         {
@@ -220,7 +269,7 @@ namespace os
           // BASEPRI only if either:
           // Rn is non-zero and the current BASEPRI value is 0
           // Rn is non-zero and less than the current BASEPRI value.
-          __set_BASEPRI_MAX (
+          internal::raise_basepri_max (
               OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY
               << ((8 - __NVIC_PRIO_BITS)));
 
@@ -313,8 +362,9 @@ namespace os
 #if (__ARM_ARCH_ISA_THUMB == 2) \
     && defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
 
-          // Restore BASEPRI to the value saved by enter().
-          __set_BASEPRI (state);
+          // Restore BASEPRI to the value saved by enter(); this raises it
+          // back to the critical section level.
+          internal::raise_basepri (state);
 
 #else
 
