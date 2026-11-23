@@ -339,15 +339,46 @@ namespace os
       void
       clock_systick::start (void)
       {
-#if defined(NDEBUG)
-        SysTick_Config (SystemCoreClock / rtos::clock_systick::frequency_hz);
-#else
-        assert (SysTick_Config (SystemCoreClock
-                                / rtos::clock_systick::frequency_hz)
-                == 0);
-#endif
+        uint32_t ticks = SystemCoreClock / rtos::clock_systick::frequency_hz;
 
-        // Set SysTick interrupt priority to the lowest level (highest value).
+        // Fails if the reload value does not fit in 24 bits, or if it is 0
+        // (SystemCoreClock not set, or lower than the tick frequency).
+        if (SysTick_Config (ticks) != 0)
+          {
+            trace::printf ("port::clock_systick::%s() SysTick_Config(%u) "
+                           "failed, SystemCoreClock %u\n",
+                           __func__, static_cast<unsigned int> (ticks),
+                           static_cast<unsigned int> (SystemCoreClock));
+
+            // Without a tick all timeouts would wait forever. abort() is
+            // not an option: in release builds it resets the core, and
+            // after the reset this fails again. Stop here, like the
+            // default fault handlers, so the failure is visible to a
+            // debugger.
+            __disable_irq ();
+#if defined(DEBUG)
+            // Mainline: v7-M, v7E-M, v8-M Main, v8.1-M.
+#if (__ARM_ARCH_ISA_THUMB == 2)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+            if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) != 0)
+              {
+                __BKPT (0);
+              }
+#pragma GCC diagnostic pop
+#else
+            __BKPT (0);
+#endif
+#endif
+            while (true)
+              {
+                __NOP ();
+              }
+          }
+
+        // Set SysTick interrupt priority to the lowest level (highest
+        // value). Also done by CMSIS SysTick_Config(); explicit, to be
+        // independent of vendor variants.
         NVIC_SetPriority (SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL);
       }
 
