@@ -419,8 +419,6 @@ namespace os
   } /* namespace rtos */
 } /* namespace os */
 
-#pragma GCC diagnostic pop
-
 // ----------------------------------------------------------------------------
 
 #endif /* __cplusplus */
