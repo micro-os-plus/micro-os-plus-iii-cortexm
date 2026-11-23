@@ -561,9 +561,20 @@ namespace os
         void
         reschedule (void)
         {
-          if (rtos::scheduler::locked ()
-              || (rtos::interrupts::in_handler_mode ()
-                  && !rtos::scheduler::preemptive ()))
+          if (rtos::scheduler::locked ())
+            {
+              // Remember the request; the core performs it when the
+              // scheduler is unlocked.
+              os::rtos::scheduler::is_reschedule_pending = true;
+#if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
+              trace::printf ("port::scheduler::%s() %s deferred\n", __func__,
+                             rtos::scheduler::current_thread_->name ());
+#endif
+              return;
+            }
+
+          if (rtos::interrupts::in_handler_mode ()
+              && !rtos::scheduler::preemptive ())
             {
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
               trace::printf ("port::scheduler::%s() %s nop\n", __func__,
@@ -576,7 +587,7 @@ namespace os
           trace::printf ("port::scheduler::%s()\n", __func__);
 #endif
 
-          instrumentation::scheduler::reschedule();
+          instrumentation::scheduler::reschedule ();
 
           os::rtos::scheduler::is_reschedule_pending = true;
 
