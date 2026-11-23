@@ -18,8 +18,9 @@
  * This file is part of the CMSIS++ proposal, intended as a CMSIS
  * replacement for C++ applications.
  *
- * It is included in `cmsis-plus/rtos/os-c-decls.h` to customise
- * it with port specific declarations.
+ * It is included in `cmsis-plus/rtos/port/os-decls.h` and in
+ * `startup/exception-handlers.c`, to customise them with
+ * port specific declarations.
  *
  * These structures (which basically contain handlers)
  * are conditionally included in the system objects

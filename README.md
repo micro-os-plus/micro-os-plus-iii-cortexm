@@ -117,20 +117,21 @@ Applications must include both.
 
 ### Status
 
-The **micro-os-plus-iii-cortexm** source library is fully functional,
-but starting with mid 2023 it was marked as end-of-life and
-is not recommended for new designs.
+The **micro-os-plus-iii-cortexm** source library is fully functional
+for Cortex-M devices.
 
-A new package will be available
-as part of µOS++ IVe.
+Note: The next edition of the project (IVe) is currently work in progress,
+with the monolithic
+repository to be split into multiple separate source code libraries.
 
 ### Build & integration info
 
 The project is written in C/C++ and it is expected
 to be used in C and C++ projects.
 
-The source code was compiled with GCC 11/12, clang 12/13/14/15
-arm-none-eabi-gcc 12, and should be warning free.
+The source code was compiled with arm-none-eabi-gcc 14,
+and should be warning free; clang is not supported yet
+(see [Limitations](#limitations)).
 
 To ease the integration of this package into user projects, there
 are already made CMake configuration files (see below).
@@ -160,7 +161,10 @@ The source files to be added to the build are:
 
 #### Dependencies
 
-- none
+- the µOS++ IIIe portable part, `@micro-os-plus/micro-os-plus-iii`
+  (the CMake target `micro-os-plus::iii`);
+- the CMSIS core and device headers (`<cmsis_device.h>`), provided
+  by the application.
 
 #### CMake
 
@@ -169,7 +173,7 @@ into a CMake application,
 add this folder to the build:
 
 ```cmake
-add_subdirectory("xpacks/@micro-os-plus/micro-os-plus-iii-cortexm")`
+add_subdirectory("xpacks/@micro-os-plus/micro-os-plus-iii-cortexm")
 ```
 
 The result is an interface library that can be added as an application
@@ -192,11 +196,17 @@ target_link_libraries(your-target PRIVATE
 
 ### Limitations
 
-- none
+- only Armv6-M, Armv7-M and Armv7E-M are supported; Armv8-M and
+  Armv8.1-M are not supported yet;
+- only GCC is supported; clang rejects the `naked` `PendSV_Handler`;
+- the Cortex-M7 r0p1 erratum 837070 (raising BASEPRI does not take
+  effect immediately) is not handled.
 
 ### Tests
 
-- none
+The tests are part of the portable part (`micro-os-plus-iii`, in the
+`tests` folder); they run on QEMU (Cortex-M0, M3, M4F and M7F) and on
+physical boards (STM32 Nucleo and Raspberry Pi Pico).
 
 ## License
 

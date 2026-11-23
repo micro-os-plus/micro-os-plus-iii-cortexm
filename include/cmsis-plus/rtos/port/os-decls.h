@@ -13,8 +13,9 @@
  * This file is part of the CMSIS++ proposal, intended as a CMSIS
  * replacement for C++ applications.
  *
- * It is included in `cmsis-plus/rtos/os.h` to customise
- * it with Cortex-M specific declarations.
+ * It is included in `cmsis-plus/rtos/os-decls.h` and
+ * `cmsis-plus/rtos/os-c-decls.h` to customise them with
+ * Cortex-M specific declarations.
  */
 
 #ifndef CMSIS_PLUS_RTOS_PORT_OS_DECLS_H_
@@ -52,8 +53,10 @@
 
 // ----------------------------------------------------------------------------
 
+// Not used by the port; kept for compatibility, since applications
+// may rely on `cmsis-plus/rtos/os.h` providing them (the POSIX port
+// provides them too).
 #include <signal.h>
-// Platform definitions
 #include <sys/time.h>
 
 // ----------------------------------------------------------------------------
