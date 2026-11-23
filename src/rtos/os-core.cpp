@@ -64,10 +64,6 @@ static_assert (OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY
 
 // ----------------------------------------------------------------------------
 
-#if defined(__ARM_ARCH_6M__)
-extern uint32_t __vectors_start;
-#endif
-
 // ----------------------------------------------------------------------------
 
 extern "C"
@@ -422,16 +418,13 @@ namespace os
          * context switch, so there is nothing to save, and no
          * temporary thread is needed.
          *
-         * The optimization attribute is required for ARM-v6M
-         * where instead of reading VTOR, the stack address is
-         * fetched from the first flash word, and reading from
-         * 0x0 is usually considered undefined behaviour.
+         * MSP is reset to `__stack`, the top of the interrupt stack
+         * (the value also stored in the first word of the vector
+         * table), unless `OS_DISABLE_CORTEXM_SET_MSP_VIA_VTOR` is
+         * defined.
          */
         void
-#if defined(__ARM_ARCH_6M__)
-            __attribute__ ((optimize ("no-delete-null-pointer-checks")))
-#endif
-            start (void)
+        start (void)
         {
 #if defined(OS_TRACE_RTOS_SCHEDULER)
           trace::printf ("port::scheduler::%s() \n", __func__);
@@ -445,41 +438,19 @@ namespace os
           // Disable all interrupts, until the first thread is entered.
           __disable_irq ();
 
-          // The initial MSP value (the top of the interrupt stack);
+          // The initial MSP value: the top of the interrupt stack, from
+          // the linker script; it is the value stored in the first word
+          // of the vector table, and the top of the range passed to
+          // interrupts::stack() below. Not read from the vector table,
+          // which may not be at address 0 (Armv6-M has no VTOR, and on
+          // some devices address 0 is a boot ROM or a bootloader).
           // MSP is reset to it when entering the first thread, since
           // nothing on the current stack is used afterwards.
-          uint32_t msp;
-
-#if defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
-
 #if !defined(OS_DISABLE_CORTEXM_SET_MSP_VIA_VTOR)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-#pragma GCC diagnostic ignored "-Wdeprecated"
-          msp = *(reinterpret_cast<uint32_t*> (SCB->VTOR));
-#pragma GCC diagnostic pop
+          uint32_t msp = reinterpret_cast<uint32_t> (&__stack);
 #else
-          msp = __get_MSP ();
-#endif /* !defined(OS_DISABLE_CORTEXM_SET_MSP_VIA_VTOR) */
-
-#elif defined(__ARM_ARCH_6M__)
-
-          // VTOR in not available on this architecture.
-          // Read the stack pointer from the first word
-          // stored in the vectors table. Since normally
-          // accesses that dereference the NULL pointer,
-          // are undefined, the function needs to be marked
-          // as -fno-delete-null-pointer-checks.
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated"
-          msp = *(static_cast<uint32_t*> (0x00000000));
-#pragma GCC diagnostic pop
-
-#else
-
-#error Implement the initial MSP on this architecture.
-
+          // Do not reset MSP; continue from where it reached.
+          uint32_t msp = __get_MSP ();
 #endif
 
           // Guarantee that the interrupt stack is properly aligned.
