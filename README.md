@@ -130,7 +130,7 @@ The project is written in C/C++ and it is expected
 to be used in C and C++ projects.
 
 The source code was compiled with arm-none-eabi-gcc 14,
-and should be warning free; clang is not supported yet
+and should be warning free; clang is not tested yet
 (see [Limitations](#limitations)).
 
 To ease the integration of this package into user projects, there
@@ -198,7 +198,8 @@ target_link_libraries(your-target PRIVATE
 
 - only Armv6-M, Armv7-M and Armv7E-M are supported; Armv8-M and
   Armv8.1-M are not supported yet;
-- only GCC is supported; clang rejects the `naked` `PendSV_Handler`;
+- only GCC is tested; the port compiles with clang, but it was not
+  linked and run;
 - the Cortex-M7 r0p1 erratum 837070 (raising BASEPRI does not take
   effect immediately) is not handled.
 

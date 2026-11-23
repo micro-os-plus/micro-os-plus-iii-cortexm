@@ -633,167 +633,18 @@ namespace os
 
         // --------------------------------------------------------------------
 
-        /**
-         * @brief Save the current thread context on stack.
-         * @return The SP after saving the context.
-         *
-         * @details
-         * Get the current thread stack (PSP) and on it save R4-R11
-         * and possibly the FPU registers.
-         *
-         * The memory address after saving these registers is returned and
-         * will be saved by switch_stacks() in the current thread context.
-         *
-         * @warning Any change in this routine must be checked in the
-         * generated code, otherwise bad surprises can occur, like
-         * adding clobber registers that added more initial pushes.
-         */
-
-        inline stack::element_t* __attribute__ ((always_inline))
-        save_on_stack (void)
-        {
-          // warning: ISO C++17 does not allow 'register' storage class
-          // specifier [-Wregister]
-          /* register */ stack::element_t* sp_;
-
-          asm volatile (
-              // Get the thread stack
-              " mrs %[r], PSP                       \n"
-              " isb                                 \n"
-
-#if defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
-
-#if defined(__ARM_FP)
-
-              // Is the thread using the FPU context?
-              " tst lr, #0x10                       \n"
-              " it eq                               \n"
-              // If so, push high vfp registers.
-              " vstmdbeq %[r]!, {s16-s31}           \n"
-
+        // Give switch_stacks() (declared in the portable part) a fixed
+        // assembler name, so that it can be called from the basic
+        // assembly code of PendSV_Handler(); it must precede the
+        // definition.
+#pragma GCC diagnostic push
+#if !defined(__clang__)
+#pragma GCC diagnostic ignored "-Wredundant-decls"
 #endif
-
-              // Save the core registers r4-r11,r14. Decrement [r].
-              // The EXC_RETURN may be tested again for FP
-              // in the restore sequence.
-              " stmdb %[r]!, {r4-r9,sl,fp,lr}       \n"
-
-#elif defined(__ARM_ARCH_6M__)
-
-              // With decrement not available, manually
-              // move the pointer 9 words below.
-              " sub %[r], %[r], #36                 \n"
-
-              // Save the core registers r4-r7. Increment [r].
-              " stmia %[r]!, {r4-r7}                \n"
-
-              // Move the core registers r8-r11 to lower registers.
-              " mov r3, r8                          \n"
-              " mov r4, r9                          \n"
-              " mov r5, sl                          \n"
-              " mov r6, fp                          \n"
-              " mov r7, lr                          \n"
-              // Save the core registers r8-r11,lr. Increment [r].
-              " stmia %[r]!, {r3-r7}                \n"
-
-              // Move [r] down, to cancel increment.
-              " sub %[r], %[r], #36                 \n"
-
-#else
-
-#error Implement registers save on this architecture.
-
-#endif
-
-              : [r] "=r"(sp_) /* out */
-              : /* in */
-              : /* clobber. DO NOT add anything here! */
-          );
-
-          return sp_;
-        }
-
-        /**
-         * @brief Restore the new thread from the given stack address.
-         * @param [in] sp Address where the thread context was saved.
-         *
-         * @details
-         * Restore R4-R11 and possibly the FPU registers.
-         * Finally write the current stack address in PSP.
-         *
-         * @warning Any change in this routine must be checked in the
-         * generated code, otherwise bad surprises can occur, like
-         * adding clobber registers that added more initial pushes.
-         */
-
-        inline void __attribute__ ((always_inline))
-        restore_from_stack (stack::element_t* sp)
-        {
-          // Without enforcing optimisations, an intermediate variable
-          // would be needed to avoid using R4, which collides with
-          // the R4 in the list of ldmia.
-
-          // register stack::element_t* sp_ asm ("r0") = sp;
-
-          asm volatile (
-
-#if defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
-
-              // Restore the core registers r4-r11,r14. Increment [r].
-              // R14 contains the EXC_RETURN value
-              // and may be used in the FP test.
-              " ldmia %[r]!, {r4-r9,sl,fp,lr}       \n"
-
-#if defined(__ARM_FP)
-
-              // Is the thread using the FPU context?
-              " tst lr, #0x10                       \n"
-              " it eq                               \n"
-              // If so, pop the high vfp registers too.
-              " vldmiaeq %[r]!, {s16-s31}           \n"
-
-#endif
-
-#elif defined(__ARM_ARCH_6M__)
-
-              // Move [r] to upper registers location (4*4).
-              " add %[r], %[r], #16                 \n"
-
-              // Restore the core registers r8-r11,lr to lower registers.
-              // Increment [r].
-              " ldmia %[r]!, {r3-r7}                \n"
-
-              // Move lower registers to upper registers r8-r11.
-              " mov r8, r3                          \n"
-              " mov r9, r4                          \n"
-              " mov sl, r5                          \n"
-              " mov fp, r6                          \n"
-              " mov lr, r7                          \n"
-
-              // Move [r] down, to lower registers location (9*4).
-              " sub %[r], %[r], #36                 \n"
-
-              // Restore the core registers r4-r7. Increment [r].
-              " ldmia %[r]!, {r4-r7}                \n"
-
-              // Move [r] up, after upper registers (5*4).
-              " add %[r], %[r], #20                 \n"
-
-#else
-
-#error Implement registers restore on this architecture.
-
-#endif
-
-              // Restore the thread stack register.
-              " msr PSP, %[r]                       \n"
-              " isb                                 \n"
-
-              : /* out */
-              : [r] "r"(sp) /* in */
-              : /* clobber. DO NOT add anything here! */
-          );
-        }
+        stack::element_t*
+        switch_stacks (stack::element_t* sp) __asm__ (
+            "os_rtos_port_switch_stacks");
+#pragma GCC diagnostic pop
 
         /**
          * @brief Switch stacks to perform the rescheduling.
@@ -940,86 +791,115 @@ using namespace os::rtos;
  * - restore all registers from the new stack
  * - resume execution of the new thread
  *
- * The `optimize("1")` is needed to avoid the nightmarish code
- * generated with `-O0`.
+ * Being an exception handler, R0-R3, R12, LR, PC and xPSR are
+ * saved automatically on the thread stack (PSP); R4-R11, the
+ * EXC_RETURN value (LR) and, if the thread uses the FPU, S16-S31 are
+ * saved and restored here, in the layout of `stack::frame_t`.
  *
- * Without it, this function would have been naked and LR have been
- * manually pushed/popped because the inlined functions include
- * variables, and on `-O0` they always get allocated local stack space,
- * which manipulates R7, and R7 is not saved in the exception frame,
- * so this would unnecessarily complicate things to recover it from MSP.
- *
- * @note To be observed here is the use of two stacks.
- * Being an exception handler, the regular push/pop in the function
- * entry/exit code use MSP. However, part of the exception
- * frame, R0-R3 are automatically saved on PSP. R4-R11 must be
- * manually saved/restored.
+ * The function is naked and contains only basic assembly, the only
+ * content the compilers support in naked functions; the registers
+ * are explicit, and no stack is used on MSP before the call
+ * (which is 8-byte aligned at exception entry, as required by the ABI).
  */
-
-// clang-format off
-/*
- * An actual version of the Cortex-M3 handler looks pretty cool:
- *
- * 800019a <PendSV_Handler>:
- * 800019a: f3ef 8009   mrs r0, PSP
- * 800019e: f3bf 8f6f   isb sy
- * 80001a2: e920 0ff0   stmdb r0!, {r4, r5, r6, r7, r8, r9, sl, fp}
- * 80001a6: f000 fe21   bl  8000dec <os::rtos::port::scheduler::switch_stacks(unsigned long*)>
- * 80001aa: e8b0 0ff0   ldmia.w r0!, {r4, r5, r6, r7, r8, r9, sl, fp}
- * 80001ae: f380 8809   msr PSP, r0
- * 80001b2: f3bf 8f6f   isb sy
- * 80001b6: 4770        bx  lr
- *
- * The switch_stack() function (using BASEPRI) doesn't look bad either:
- *
- * 8000d88 <os::rtos::port::scheduler::switch_stacks(unsigned long*)>:
- * 8000d88: b538        push  {r3, r4, r5, lr}
- * 8000d8a: f3ef 8511   mrs r5, BASEPRI
- * 8000d8e: 2340        movs  r3, #64 ; 0x40
- * 8000d90: f383 8812   msr BASEPRI_MAX, r3
- * 8000d94: 4b0c        ldr r3, [pc, #48] ; (8000dc8 <os::rtos::port::scheduler::switch_stacks(unsigned long*)+0x40>)
- * 8000d96: f04f 6200   mov.w r2, #134217728  ; 0x8000000
- * 8000d9a: 4c0c        ldr r4, [pc, #48] ; (8000dcc <os::rtos::port::scheduler::switch_stacks(unsigned long*)+0x44>)
- * 8000d9c: 605a        str r2, [r3, #4]
- * 8000d9e: 6821        ldr r1, [r4, #0]
- * 8000da0: f891 3058   ldrb.w  r3, [r1, #88] ; 0x58
- * 8000da4: 66c8        str r0, [r1, #108]  ; 0x6c
- * 8000da6: 2b03        cmp r3, #3
- * 8000da8: d105        bne.n 8000db6 <os::rtos::port::scheduler::switch_stacks(unsigned long*)+0x2e>
- * 8000daa: 68cb        ldr r3, [r1, #12]
- * 8000dac: b91b        cbnz  r3, 8000db6 <os::rtos::port::scheduler::switch_stacks(unsigned long*)+0x2e>
- * 8000dae: 3108        adds  r1, #8
- * 8000db0: 4807        ldr r0, [pc, #28] ; (8000dd0 <os::rtos::port::scheduler::switch_stacks(unsigned long*)+0x48>)
- * 8000db2: f003 f935   bl  8004020 <os::rtos::ready_threads_list::link(os::rtos::waiting_thread_node&)>
- * 8000db6: 4806        ldr r0, [pc, #24] ; (8000dd0 <os::rtos::port::scheduler::switch_stacks(unsigned long*)+0x48>)
- * 8000db8: f003 f960   bl  800407c <os::rtos::ready_threads_list::unlink_head()>
- * 8000dbc: 6020        str r0, [r4, #0]
- * 8000dbe: 6823        ldr r3, [r4, #0]
- * 8000dc0: 6ed8        ldr r0, [r3, #108]  ; 0x6c
- * 8000dc2: f385 8811   msr BASEPRI, r5
- * 8000dc6: bd38        pop {r3, r4, r5, pc}
- * 8000dc8: e000ed00  .word 0xe000ed00
- * 8000dcc: 20002ac4  .word 0x20002ac4
- * 8000dd0: 20002abc  .word 0x20002abc
- *
- * In case you wonder, the link() and unlink() functions are also
- * relatively simple, with link() slightly more complicated, since
- * it needs to preserve the ready list order.
- */
-// clang-format on
-
-void __attribute__ ((section (".after_vectors"), naked, used, optimize ("1")))
+void __attribute__ ((section (".after_vectors"), naked, used))
 PendSV_Handler (void)
 {
-  // The naked attribute is used to fully control the function entry/exit
-  // code; be sure other registers are not used in the assembly parts.
-  // Do NOT use push/pop, since the LR is from a different context.
+  __asm__ volatile (
+      // GCC assembles the Thumb-1 inline asm in the divided syntax;
+      // use the unified syntax, as clang always does.
+      " .syntax unified \n"
 
-  // The whole mystery of context switching, in one sentence. :-)
-  port::scheduler::restore_from_stack (
-      port::scheduler::switch_stacks (port::scheduler::save_on_stack ()));
+  // Mainline: v7-M, v7E-M, v8-M Main, v8.1-M (M3, M4, M7, M33, ...).
+#if (__ARM_ARCH_ISA_THUMB == 2)
 
-  asm volatile ("bx lr");
+      // Get the thread stack.
+      " mrs r0, psp \n"
+      " isb \n"
+
+#if defined(__ARM_FP)
+      // Is the thread using the FPU context?
+      " tst lr, #0x10 \n"
+      " it eq \n"
+      // If so, push the high FPU registers.
+      " vstmdbeq r0!, {s16-s31} \n"
+#endif
+
+      // Save the core registers r4-r11 and EXC_RETURN (lr).
+      " stmdb r0!, {r4-r9, sl, fp, lr} \n"
+
+      // Switch threads, with port::scheduler::switch_stacks(); r0 is
+      // the old and then the new thread SP.
+      " bl os_rtos_port_switch_stacks \n"
+
+      // Restore the core registers r4-r11 and EXC_RETURN (lr).
+      " ldmia r0!, {r4-r9, sl, fp, lr} \n"
+
+#if defined(__ARM_FP)
+      // Is the thread using the FPU context?
+      " tst lr, #0x10 \n"
+      " it eq \n"
+      // If so, pop the high FPU registers too.
+      " vldmiaeq r0!, {s16-s31} \n"
+#endif
+
+      // Restore the thread stack and return to the new thread.
+      " msr psp, r0 \n"
+      " isb \n"
+      " bx lr \n"
+
+  // Baseline: v6-M, v8-M Base (M0, M0+, M23).
+#elif (__ARM_ARCH_ISA_THUMB == 1)
+
+      // Get the thread stack.
+      " mrs r0, psp \n"
+      " isb \n"
+
+      // With decrement not available, manually move the pointer
+      // 9 words below.
+      " subs r0, #36 \n"
+      // Save the core registers r4-r7. Increment r0.
+      " stmia r0!, {r4-r7} \n"
+      // Move the core registers r8-r11 and lr to lower registers.
+      " mov r3, r8 \n"
+      " mov r4, r9 \n"
+      " mov r5, sl \n"
+      " mov r6, fp \n"
+      " mov r7, lr \n"
+      // Save the core registers r8-r11 and EXC_RETURN. Increment r0.
+      " stmia r0!, {r3-r7} \n"
+      // Move r0 down, to cancel the increment.
+      " subs r0, #36 \n"
+
+      // Switch threads, with port::scheduler::switch_stacks(); r0 is
+      // the old and then the new thread SP.
+      " bl os_rtos_port_switch_stacks \n"
+
+      // Move r0 to the upper registers location (4*4).
+      " adds r0, #16 \n"
+      // Restore r8-r11 and EXC_RETURN to lower registers. Increment r0.
+      " ldmia r0!, {r3-r7} \n"
+      // Move the lower registers to r8-r11 and lr.
+      " mov r8, r3 \n"
+      " mov r9, r4 \n"
+      " mov sl, r5 \n"
+      " mov fp, r6 \n"
+      " mov lr, r7 \n"
+      // Move r0 down, to the lower registers location (9*4).
+      " subs r0, #36 \n"
+      // Restore the core registers r4-r7. Increment r0.
+      " ldmia r0!, {r4-r7} \n"
+      // Move r0 up, after the upper registers (5*4).
+      " adds r0, #20 \n"
+
+      // Restore the thread stack and return to the new thread.
+      " msr psp, r0 \n"
+      " isb \n"
+      " bx lr \n"
+
+#else
+#error "PendSV_Handler() not yet implemented for this architecture"
+#endif
+  );
 }
 
 // ----------------------------------------------------------------------------
