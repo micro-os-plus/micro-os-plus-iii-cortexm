@@ -135,7 +135,11 @@ namespace os
          * @details
          * In the simplest form, CMSIS++ can disable all interrupts
          * when entering a critical region, and in this case all
-         * interrupt priorities are valid.
+         * configurable interrupt priorities are valid.
+         *
+         * NMI and HardFault have fixed priorities, higher than any
+         * configurable one, and are not masked by the critical
+         * sections; system calls are never valid from them.
          *
          * If the application requires to have some very fast
          * interrupts, never affected by the system critical regions,
@@ -151,16 +155,25 @@ namespace os
         inline bool
         is_priority_valid (void)
         {
-#if defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
+          uint32_t exception_number = __get_IPSR ();
 
-#if defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
+          // Reset (1), NMI (2) and HardFault (3) have fixed priorities,
+          // higher than any configurable one; they are masked neither by
+          // BASEPRI nor by PRIMASK, so system calls are never valid from
+          // them. (Also, NVIC_GetPriority() would index outside SHPR.)
+          if (exception_number > 0 && exception_number < 4)
+            {
+              return false;
+            }
+
+#if (defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)) \
+    && defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
 
           // The trick here is to properly account for differences
           // between Cortex-M exception number stored in IPSR (an
           // unsigned byte), and the CMSIS interrupt number (IRQn),
           // which is [-15 ... -1, 0 ... 239 ], in other words
           // it is negative for the system exceptions.
-          uint32_t exception_number = __get_IPSR ();
           if (exception_number > 0)
             {
               uint32_t prio = NVIC_GetPriority (
@@ -168,24 +181,15 @@ namespace os
               return (prio
                       >= OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY);
             }
-          else
-            {
-              return true;
-            }
+          return true;
 
 #else
 
-          // When using DI/EI, all priority levels are valid.
+          // When using DI/EI (always on ARMv6-M), all configurable
+          // priority levels are valid.
           return true;
 
-#endif /* defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY) */
-
-#elif defined(__ARM_ARCH_6M__)
-
-          // When using DI/EI, all priority levels are valid.
-          return true;
-
-#endif /* architecture */
+#endif
         }
 
         // Enter an IRQ critical section
