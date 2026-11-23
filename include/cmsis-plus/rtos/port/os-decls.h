@@ -23,6 +23,18 @@
 
 // ----------------------------------------------------------------------------
 
+// Supported architectures: Armv6-M (Baseline: M0, M0+), Armv7-M and
+// Armv7E-M (Mainline: M3, M4, M7). The rest of the port tells Mainline
+// from Baseline by `__ARM_ARCH_ISA_THUMB`; `__ARM_ARCH` is checked here
+// only to exclude Armv8-M until it is supported.
+#if !(defined(__ARM_ARCH_PROFILE) && (__ARM_ARCH_PROFILE == 'M'))
+#error "The Cortex-M port requires an M-profile architecture."
+#elif (__ARM_ARCH != 6) && (__ARM_ARCH != 7)
+#error "Armv8-M is not yet implemented in the Cortex-M port."
+#endif
+
+// ----------------------------------------------------------------------------
+
 #if defined(OS_USE_OS_APP_CONFIG_H)
 #include <cmsis-plus/os-app-config.h>
 #endif

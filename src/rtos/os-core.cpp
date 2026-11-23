@@ -14,7 +14,8 @@
  * the context switching and context creation.
  */
 
-#if defined(__ARM_EABI__)
+// The supported architectures are checked in
+// `cmsis-plus/rtos/port/os-decls.h`.
 
 // ----------------------------------------------------------------------------
 
@@ -30,21 +31,18 @@
 
 // ----------------------------------------------------------------------------
 
-#if !defined(__ARM_ARCH_7M__) && !defined(__ARM_ARCH_7EM__) \
-    && !defined(__ARM_ARCH_6M__)
-#error "Architecture not supported."
-#endif
-
-#if defined(__ARM_ARCH_6M__)
+// Baseline: v6-M, v8-M Base (M0, M0+, M23); no BASEPRI.
+#if (__ARM_ARCH_ISA_THUMB == 1)
 
 #if defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
 #error \
-    "OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY should not be used with Cortex-M0/M0+ devices."
+    "OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY should not be used with Baseline (Cortex-M0/M0+/M23) devices."
 #endif
 
-#endif /* defined(__ARM_ARCH_6M__) */
+#endif /* (__ARM_ARCH_ISA_THUMB == 1) */
 
-#if defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
+// Mainline: v7-M, v7E-M, v8-M Main, v8.1-M (M3, M4, M7, M33, ...).
+#if (__ARM_ARCH_ISA_THUMB == 2)
 
 #if defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
 
@@ -60,7 +58,7 @@ static_assert (OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY
 
 #endif /* defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY) */
 
-#endif /* defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__) */
+#endif /* (__ARM_ARCH_ISA_THUMB == 2) */
 
 // ----------------------------------------------------------------------------
 
@@ -503,7 +501,8 @@ namespace os
           uint32_t lr = f->r14_lr;
           uint32_t pc = f->r15_pc | 1; // Thumb state.
 
-#if defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
+// Mainline: v7-M, v7E-M, v8-M Main, v8.1-M (M3, M4, M7, M33, ...).
+#if (__ARM_ARCH_ISA_THUMB == 2)
 
           // Disable the base priority (allow all interrupts).
           __set_BASEPRI (0);
@@ -672,9 +671,11 @@ namespace os
           uint32_t pri;
 
           // Enter a local critical section to protect the lists.
-#if defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
-
-#if defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
+// BASEPRI is available on Mainline (v7-M, v7E-M, v8-M Main, v8.1-M);
+// otherwise (DI/EI, and always on Baseline) PRIMASK is used, which
+// exists on all M-profile architectures.
+#if (__ARM_ARCH_ISA_THUMB == 2) \
+    && defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
 
           pri = __get_BASEPRI ();
           __set_BASEPRI_MAX (
@@ -682,16 +683,6 @@ namespace os
               << ((8 - __NVIC_PRIO_BITS)));
 
 #else
-
-          // Read the current PRIMASK, to be returned and later restored.
-          pri = __get_PRIMASK ();
-
-          // Disable all interrupts.
-          __disable_irq ();
-
-#endif /* defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY) */
-
-#elif defined(__ARM_ARCH_6M__)
 
           // Read the current PRIMASK, to be returned and later restored.
           pri = __get_PRIMASK ();
@@ -738,21 +729,13 @@ namespace os
           stack::element_t* out_sp
               = rtos::scheduler::current_thread_->context_.port_.stack_ptr;
 
-#if defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
-
-#if defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
+#if (__ARM_ARCH_ISA_THUMB == 2) \
+    && defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
 
           // Restore BASEPRI to the value saved at the beginning.
           __set_BASEPRI (pri);
 
 #else
-
-          // Restore PRIMASK to the value saved at the beginning.
-          __set_PRIMASK (pri);
-
-#endif /* defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY) */
-
-#elif defined(__ARM_ARCH_6M__)
 
           // Restore PRIMASK to the value saved at the beginning.
           __set_PRIMASK (pri);
@@ -903,5 +886,3 @@ PendSV_Handler (void)
 }
 
 // ----------------------------------------------------------------------------
-
-#endif /* defined(__ARM_EABI__) */

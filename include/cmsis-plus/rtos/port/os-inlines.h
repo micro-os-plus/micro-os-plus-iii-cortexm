@@ -54,18 +54,24 @@ namespace os
         greeting (void)
         {
           trace::printf ("Scheduler: µOS++ Cortex-M");
-#if defined(__ARM_ARCH_7EM__)
+// Mainline with DSP: v7E-M (M4, M7).
+#if (__ARM_ARCH_ISA_THUMB == 2) && defined(__ARM_FEATURE_DSP)
           trace::putchar ('0' + __CORTEX_M); // M4/M7
 #if defined(__ARM_FP)
           trace::printf (" FP");
 #endif
-#elif defined(__ARM_ARCH_7M__)
+// Mainline without DSP: v7-M (M3).
+#elif (__ARM_ARCH_ISA_THUMB == 2)
           trace::printf ("3");
-#elif defined(__ARM_ARCH_6M__)
+// Baseline: v6-M (M0, M0+).
+#elif (__ARM_ARCH_ISA_THUMB == 1)
           trace::printf ("0/0+");
+#else
+#error "Not yet implemented for this architecture."
 #endif
           trace::printf (", preemptive");
-#if (defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)) \
+// Mainline: v7-M, v7E-M, v8-M Main, v8.1-M (M3, M4, M7, M33, ...).
+#if (__ARM_ARCH_ISA_THUMB == 2) \
     && defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
           trace::printf (", BASEPRI(%u)",
                          OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY);
@@ -167,7 +173,8 @@ namespace os
               return false;
             }
 
-#if (defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)) \
+// Mainline: v7-M, v7E-M, v8-M Main, v8.1-M (M3, M4, M7, M33, ...).
+#if (__ARM_ARCH_ISA_THUMB == 2) \
     && defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
 
           // The trick here is to properly account for differences
@@ -199,9 +206,11 @@ namespace os
         {
           uint32_t pri;
 
-#if defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
-
-#if defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
+// BASEPRI is available on Mainline (v7-M, v7E-M, v8-M Main, v8.1-M);
+// otherwise (DI/EI, and always on Baseline) PRIMASK is used, which
+// exists on all M-profile architectures.
+#if (__ARM_ARCH_ISA_THUMB == 2) \
+    && defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
 
           // Read the current BASEPRI, to be returned and later restored.
           pri = __get_BASEPRI ();
@@ -216,16 +225,6 @@ namespace os
               << ((8 - __NVIC_PRIO_BITS)));
 
 #else
-
-          // Read the current PRIMASK, to be returned and later restored.
-          pri = __get_PRIMASK ();
-
-          // Disable all interrupts.
-          __disable_irq ();
-
-#endif /* defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY) */
-
-#elif defined(__ARM_ARCH_6M__)
 
           // Read the current PRIMASK, to be returned and later restored.
           pri = __get_PRIMASK ();
@@ -249,21 +248,16 @@ namespace os
         inline void __attribute__ ((always_inline))
         critical_section::exit (rtos::interrupts::state_t state)
         {
-#if defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
-
-#if defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
+// BASEPRI is available on Mainline (v7-M, v7E-M, v8-M Main, v8.1-M);
+// otherwise (DI/EI, and always on Baseline) PRIMASK is used, which
+// exists on all M-profile architectures.
+#if (__ARM_ARCH_ISA_THUMB == 2) \
+    && defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
 
           // Restore BASEPRI to the value saved by enter().
           __set_BASEPRI (state);
 
 #else
-
-          // Restore PRIMASK to the value saved by enter().
-          __set_PRIMASK (state);
-
-#endif /* defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY) */
-
-#elif defined(__ARM_ARCH_6M__)
 
           // Restore PRIMASK to the value saved by enter().
           __set_PRIMASK (state);
@@ -282,9 +276,11 @@ namespace os
         {
           uint32_t pri;
 
-#if defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
-
-#if defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
+// BASEPRI is available on Mainline (v7-M, v7E-M, v8-M Main, v8.1-M);
+// otherwise (DI/EI, and always on Baseline) PRIMASK is used, which
+// exists on all M-profile architectures.
+#if (__ARM_ARCH_ISA_THUMB == 2) \
+    && defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
 
           pri = __get_BASEPRI ();
 
@@ -293,15 +289,6 @@ namespace os
           __set_BASEPRI (0);
 
 #else
-
-          pri = __get_PRIMASK ();
-
-          // Enable all interrupts.
-          __enable_irq ();
-
-#endif /* defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY) */
-
-#elif defined(__ARM_ARCH_6M__)
 
           pri = __get_PRIMASK ();
 
@@ -320,21 +307,16 @@ namespace os
         inline void __attribute__ ((always_inline))
         uncritical_section::exit (rtos::interrupts::state_t state)
         {
-#if defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
-
-#if defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
+// BASEPRI is available on Mainline (v7-M, v7E-M, v8-M Main, v8.1-M);
+// otherwise (DI/EI, and always on Baseline) PRIMASK is used, which
+// exists on all M-profile architectures.
+#if (__ARM_ARCH_ISA_THUMB == 2) \
+    && defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
 
           // Restore BASEPRI to the value saved by enter().
           __set_BASEPRI (state);
 
 #else
-
-          // Restore PRIMASK to the value saved by enter().
-          __set_PRIMASK (state);
-
-#endif /* defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY) */
-
-#elif defined(__ARM_ARCH_6M__)
 
           // Restore PRIMASK to the value saved by enter().
           __set_PRIMASK (state);
