@@ -416,6 +416,12 @@ namespace os
          * Guide to ARM Cortex!-M3 and Cortex-M4 Processors" by
          * Joseph Yiu, provides a simpler solution.
          *
+         * As in the POSIX port, the first thread is selected here
+         * and entered directly from Thread mode, using the initial
+         * context prepared by `context::create()`; there is no first
+         * context switch, so there is nothing to save, and no
+         * temporary thread is needed.
+         *
          * The optimization attribute is required for ARM-v6M
          * where instead of reading VTOR, the stack address is
          * fetched from the first flash word, and reading from
@@ -436,29 +442,13 @@ namespace os
           // os_startup_initialize_hardware_early().
 #endif
 
-          // Disable all interrupts, to safely change the stack.
+          // Disable all interrupts, until the first thread is entered.
           __disable_irq ();
 
-          // The main trick is to switch the current SP from MSP to PSP
-          // without breaking the running code. This is simply done by
-          // initialising PSP with the same value as MSP.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated"
-          __set_PSP (__get_MSP ());
-          // Configure thread mode to use PSP (CONTROL.SPSEL=1).
-          __set_CONTROL (__get_CONTROL () | CONTROL_SPSEL_Msk);
-#pragma GCC diagnostic pop
-
-          // Barrier, as usual after all changes to CONTROL.
-          __ISB ();
-
-          // Re-initialise MSP to the reset value. This might be a small
-          // problem, since PSP is only a few words below  it, and enabling
-          // interrupts might allow the exception stack to overwrite the
-          // current thread stack, but in reality this routine does not
-          // use stack variables and does not return, but will switch
-          // to the main thread, which has its own PSP, so the current
-          // stack shouldn't be a problem.
+          // The initial MSP value (the top of the interrupt stack);
+          // MSP is reset to it when entering the first thread, since
+          // nothing on the current stack is used afterwards.
+          uint32_t msp;
 
 #if defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
 
@@ -466,8 +456,10 @@ namespace os
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wdeprecated"
-          __set_MSP (*(reinterpret_cast<uint32_t*> (SCB->VTOR)));
+          msp = *(reinterpret_cast<uint32_t*> (SCB->VTOR));
 #pragma GCC diagnostic pop
+#else
+          msp = __get_MSP ();
 #endif /* !defined(OS_DISABLE_CORTEXM_SET_MSP_VIA_VTOR) */
 
 #elif defined(__ARM_ARCH_6M__)
@@ -479,27 +471,19 @@ namespace os
           // are undefined, the function needs to be marked
           // as -fno-delete-null-pointer-checks.
 
-#if 0
-          // An alternate way would try to fool the compiler
-          // with a volatile pointer, but this is not
-          // guaranteed to work in future versions.
-          uint32_t* volatile vectors_addr = 0x00000000;
-          __set_MSP (*vectors_addr);
-#else
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated"
-          __set_MSP (*(static_cast<uint32_t*> (0x00000000)));
+          msp = *(static_cast<uint32_t*> (0x00000000));
 #pragma GCC diagnostic pop
-#endif
 
 #else
 
-#error Implement __set_MSP() on this architecture.
+#error Implement the initial MSP on this architecture.
 
 #endif
 
           // Guarantee that the interrupt stack is properly aligned.
-          assert ((__get_MSP () & 7) == 0);
+          assert ((msp & 7) == 0);
 
           // Set the beginning address and size of the interrupt stack.
           rtos::interrupts::stack ()->set (
@@ -510,23 +494,43 @@ namespace os
           // Set PendSV interrupt priority to the lowest level (highest value).
           NVIC_SetPriority (PendSV_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL);
 
-          // One disadvantage of this simple method is that
-          // the first context switch will want to save the initial SP
-          // somewhere, so prepare a fake thread context.
-          // Don't worry for being on the stack, this is used
-          // only once and can be overridden later.
-          os_thread_t fake_thread;
-          memset (&fake_thread, 0, sizeof (os_thread_t));
+          // Select the first thread, as the context switch would do
+          // (unlink_head() also marks it as running).
+          rtos::scheduler::current_thread_
+              = rtos::scheduler::ready_threads_list_.unlink_head ();
 
-          fake_thread.name = "fake_thread";
-          rtos::thread* pth = reinterpret_cast<rtos::thread*> (&fake_thread);
+          instrumentation::thread::active (rtos::scheduler::current_thread_);
 
-          // Make the fake thread look like the current thread.
-          rtos::scheduler::current_thread_ = pth;
+          // Entering the first thread is not counted as a context switch
+          // (as in the POSIX port).
 
-          // Trigger the PendSV; the exception will happen a bit later,
-          // after re-enabling the interrupts.
-          scheduler::reschedule ();
+#if defined(OS_INCLUDE_RTOS_STATISTICS_THREAD_CPU_CYCLES)
+          // Do not charge the time before the start to the first thread.
+          rtos::scheduler::statistics::switch_timestamp_ = hrclock.now ();
+#endif
+
+#if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
+          trace::printf ("port::scheduler::%s() to %s\n", __func__,
+                         rtos::scheduler::current_thread_->name ());
+#endif
+
+          // The initial context, as created by context::create().
+          stack::frame_t* f = reinterpret_cast<stack::frame_t*> (
+              rtos::scheduler::current_thread_->context_.port_.stack_ptr);
+
+          // The thread stack after the frame is discarded, as after
+          // the exception return.
+          uint32_t psp = reinterpret_cast<uint32_t> (&f->psr + 1);
+
+          // Thread mode uses PSP (CONTROL.SPSEL=1); no FP context is
+          // active, as with the initial EXC_RETURN.
+          uint32_t control = __get_CONTROL () | CONTROL_SPSEL_Msk;
+#if defined(CONTROL_FPCA_Msk)
+          control &= ~CONTROL_FPCA_Msk;
+#endif
+
+          uint32_t lr = f->r14_lr;
+          uint32_t pc = f->r15_pc | 1; // Thumb state.
 
 #if defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
 
@@ -537,14 +541,27 @@ namespace os
 
           lock_state = state::init;
 
-          // Enable all interrupts; allow PendSV to occur.
-          __enable_irq ();
+          // Enter the first thread: switch Thread mode to its stack (PSP),
+          // reset MSP to the top of the interrupt stack, load the
+          // argument (r0) and the link register, and only then enable
+          // the interrupts, when no stack variable is used any more;
+          // an interrupt pending here runs with the first thread as
+          // the current thread.
+          register uint32_t r0 __asm__ ("r0") = f->r0;
+          __asm__ volatile ("msr psp, %[psp] \n"
+                            "msr control, %[control] \n"
+                            "isb \n"
+                            "msr msp, %[msp] \n"
+                            "mov lr, %[lr] \n"
+                            "cpsie i \n"
+                            "bx %[pc] \n"
+                            :
+                            : [psp] "r"(psp), [control] "r"(control),
+                              [msp] "r"(msp), [lr] "r"(lr), [pc] "r"(pc),
+                              "r"(r0)
+                            : "lr", "memory");
 
-          // The context switch will occur somewhere here.
-          for (;;)
-            __NOP ();
-
-          /* NOTREACHED */
+          __builtin_unreachable ();
         }
 
         // --------------------------------------------------------------------
