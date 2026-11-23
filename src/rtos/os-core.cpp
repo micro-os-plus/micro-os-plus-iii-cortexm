@@ -471,12 +471,11 @@ namespace os
           instrumentation::thread::active (rtos::scheduler::current_thread_);
 
           // Entering the first thread is not counted as a context switch
-          // (as in the POSIX port).
-
-#if defined(OS_INCLUDE_RTOS_STATISTICS_THREAD_CPU_CYCLES)
-          // Do not charge the time before the start to the first thread.
-          rtos::scheduler::statistics::switch_timestamp_ = hrclock.now ();
-#endif
+          // (as in the POSIX port). The statistics and the CPU cycles
+          // switch timestamp are reset by the core scheduler::start()
+          // right before calling the port, so they are not set again
+          // here: the few microseconds of the port start are charged to
+          // the first thread, as the switch time is to every next one.
 
 #if defined(OS_TRACE_RTOS_THREAD_CONTEXT)
           trace::printf ("port::scheduler::%s() to %s\n", __func__,
