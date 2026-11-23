@@ -846,6 +846,33 @@ a GCC-only `optimize` attribute); fixed with #7 (MSP set from
 - the generated code (M0 debug, M7F release) loads all the asm inputs
   into registers before the stack switch.
 
+
+### Follow-up: redundant switch timestamp
+
+Found while fixing the POSIX port review
+(`micro-os-plus-iii-posix-arch/maintenance/docs/CODE-REVIEW-1.md`, #7):
+the core's `scheduler::start()` already resets the statistics and sets
+`switch_timestamp_ = hrclock.now()` right before calling
+`port::scheduler::start()`, so the assignment added to `start()` here
+(with the comment "Do not charge the time before the start to the first
+thread") was redundant. Removed in c244fa1 (no issue), for these reasons:
+
+- one place: the core owns the statistics initialisation, and the POSIX
+  port relies on it, so both ports now do the same bookkeeping;
+- the comment was misleading: it suggested the port corrected something
+  the core did wrong;
+- the only effect of the second assignment was to exclude the few
+  microseconds of the port start (and any interrupt taken before the
+  port disables them) from the first thread's CPU cycles, negligible
+  in a statistic that includes the switch and interrupt time at every
+  later switch anyway.
+
+The comment in `start()` now gives this reason. The instrumentation
+`active` event is kept, and was added to the POSIX port.
+
+QEMU M0, M3, M4F and M7F suites (debug and release) pass, with no
+warnings.
+
 ---
 
 ## #9 - `SysTick_Config()` failure ignored in release builds
