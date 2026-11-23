@@ -561,6 +561,15 @@ namespace os
         void
         reschedule (void)
         {
+          // Before the scheduler is started there is nothing to switch
+          // to; threads created by static constructors only become
+          // ready, and run after scheduler::start(). The core sets the
+          // started flag before calling port::scheduler::start().
+          if (!rtos::scheduler::started ())
+            {
+              return;
+            }
+
           if (rtos::scheduler::locked ())
             {
               // Remember the request; the core performs it when the
