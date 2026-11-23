@@ -386,21 +386,23 @@ namespace os
         // If this happens before the event, will be used as such.
         uint32_t val = SysTick->VAL;
 
-        // Check overflow. If the exception is pending, it means that the
-        // interrupt occurred during this critical section and was not
-        // yet processed, so the total cycles count in steady_count_
-        // does not yet reflect the correct value and needs to be
-        // adjusted by one full cycle length.
-        if (SysTick->CTRL & SCB_ICSR_PENDSTSET_Msk)
+        // Check overflow. If the SysTick exception is pending (in ICSR),
+        // the counter wrapped during this critical section and the
+        // interrupt was not yet processed, so the total cycles count in
+        // steady_count_ does not yet reflect the correct value and needs
+        // to be adjusted by one full cycle length.
+        // Only one wrap can be detected; a critical section longer than
+        // one tick loses the additional ticks.
+        if (SCB->ICSR & SCB_ICSR_PENDSTSET_Msk)
           {
             // Sample the decrementing counter again to validate the
             // initial sample.
             uint32_t val_subsequent = SysTick->VAL;
 
-            // If the value did decrease, the timer did not recycle
-            // between the two reads; in other words, the interrupt
-            // occurred before the first read.
-            if (val > val_subsequent)
+            // If the value did not increase (equal included), the timer
+            // did not recycle between the two reads; in other words, the
+            // wrap occurred before the first read.
+            if (val >= val_subsequent)
               {
                 // The count must be adjusted with a full cycle.
                 return load_value + 1 + (load_value - val);
