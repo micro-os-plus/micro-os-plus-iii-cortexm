@@ -24,13 +24,14 @@
 // ----------------------------------------------------------------------------
 
 // Supported architectures: Armv6-M (Baseline: M0, M0+), Armv7-M and
-// Armv7E-M (Mainline: M3, M4, M7). The rest of the port tells Mainline
-// from Baseline by `__ARM_ARCH_ISA_THUMB`; `__ARM_ARCH` is checked here
-// only to exclude Armv8-M until it is supported.
+// Armv7E-M (Mainline: M3, M4, M7), Armv8-M Baseline (M23) and Armv8-M
+// Mainline (M33, M55, M85). The rest of the port tells Mainline from
+// Baseline by `__ARM_ARCH_ISA_THUMB`; `__ARM_ARCH` is checked here only
+// to exclude the versions that are not yet supported.
 #if !(defined(__ARM_ARCH_PROFILE) && (__ARM_ARCH_PROFILE == 'M'))
 #error "The Cortex-M port requires an M-profile architecture."
-#elif (__ARM_ARCH != 6) && (__ARM_ARCH != 7)
-#error "Armv8-M is not yet implemented in the Cortex-M port."
+#elif (__ARM_ARCH != 6) && (__ARM_ARCH != 7) && (__ARM_ARCH != 8)
+#error "This Armv-M version is not yet implemented in the Cortex-M port."
 #endif
 
 // ----------------------------------------------------------------------------
