@@ -130,6 +130,35 @@ namespace os
 
       namespace interrupts
       {
+        inline void __attribute__ ((always_inline))
+        set_stack_limit (const void* bottom)
+        {
+// Armv8-M and Armv8.1-M, Baseline and Mainline (M23, M33, M55, M85) have
+// the MSPLIM register; the earlier architectures have no stack limit.
+// Not the CMSIS `__set_MSPLIM()`, which tests `__ARM_ARCH_8M_MAIN__` and
+// does nothing on Armv8.1-M.
+#if (__ARM_ARCH >= 8)
+          // The low 3 bits of MSPLIM are ignored; round up, to never
+          // allow more than the stack area.
+          uint32_t limit = (static_cast<uint32_t> (
+                                reinterpret_cast<uintptr_t> (bottom))
+                            + 7U)
+                           & ~7U;
+          __asm__ volatile ("msr msplim, %0" : : "r"(limit) :);
+// Mainline: v8-M Main, v8.1-M (M33, M55, M85).
+#if (__ARM_ARCH_ISA_THUMB == 2)
+          // Ignore the limit in HardFault and NMI, otherwise the
+          // HardFault that reports the stack overflow cannot stack its
+          // exception frame, and the processor locks up.
+          // SCB->CCR |= SCB_CCR_STKOFHFNMIGN_Msk; the CMSIS `SCB` macro
+          // uses an old-style cast, rejected by the C++ warnings.
+          *reinterpret_cast<volatile uint32_t*> (0xE000ED14UL) |= (1UL << 10);
+#endif
+#else
+          (void)bottom;
+#endif
+        }
+
 // Mainline: v7-M, v7E-M, v8-M Main, v8.1-M (M3, M4, M7, M33, ...).
 #if (__ARM_ARCH_ISA_THUMB == 2) \
     && defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
