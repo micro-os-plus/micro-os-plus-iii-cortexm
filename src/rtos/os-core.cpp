@@ -391,6 +391,41 @@ namespace os
         }
 
         /**
+         * @brief Set the hardware stack limit of a thread.
+         * @param [in] th The thread that is about to run.
+         *
+         * @details
+         * On Armv8-M and Armv8.1-M, Baseline and Mainline (M23, M33, M55,
+         * M85), set PSPLIM to the bottom of the thread stack, so that
+         * an overflow raises a fault (UFSR.STKOF) instead of silently
+         * overwriting the memory below the stack. The first word of the
+         * stack holds the stack magic checked by the core, so the limit
+         * is placed after it, rounded up to 8 bytes (the low bits of the
+         * register are ignored).
+         *
+         * Called with the interrupts masked (from the scheduler start
+         * and from the context switch), before the thread is entered;
+         * PSPLIM is not used while running in Handler mode, so it
+         * does not matter that PSP still points to the old thread.
+         * Does nothing on the architectures without stack limit.
+         */
+        static inline void __attribute__ ((always_inline))
+        set_thread_stack_limit (rtos::thread* th)
+        {
+#if (__ARM_ARCH >= 8)
+          uint32_t limit = (static_cast<uint32_t> (reinterpret_cast<uintptr_t> (
+                                th->stack ().bottom ()))
+                            + static_cast<uint32_t> (
+                                sizeof (rtos::thread::stack::element_t))
+                            + 7U)
+                           & ~7U;
+          __asm__ volatile ("msr psplim, %0" : : "r"(limit) :);
+#else
+          (void)th;
+#endif
+        }
+
+        /**
          * @brief Start the scheduler and pass control to the main thread.
          *
          * @details
@@ -489,6 +524,10 @@ namespace os
           // The thread stack after the frame is discarded, as after
           // the exception return.
           uint32_t psp = reinterpret_cast<uint32_t> (&f->psr + 1);
+
+          // Enable the hardware check of the first thread stack, if
+          // available; it is not used before Thread mode uses PSP.
+          set_thread_stack_limit (rtos::scheduler::current_thread_);
 
           // Thread mode uses PSP (CONTROL.SPSEL=1); no FP context is
           // active, as with the initial EXC_RETURN.
@@ -728,6 +767,9 @@ namespace os
           // Prepare a local copy of the new thread SP.
           stack::element_t* out_sp
               = rtos::scheduler::current_thread_->context_.port_.stack_ptr;
+
+          // Set the hardware stack limit of the new thread, if available.
+          set_thread_stack_limit (rtos::scheduler::current_thread_);
 
 #if (__ARM_ARCH_ISA_THUMB == 2) \
     && defined(OS_INTEGER_RTOS_CRITICAL_SECTION_INTERRUPT_PRIORITY)
