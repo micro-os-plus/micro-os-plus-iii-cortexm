@@ -6,9 +6,46 @@ Please check
 [GitHub](https://github.com/micro-os-plus/micro-os-plus-iii-cortexm/issues)
 and close existing issues and pull requests.
 
+## 2026-11-28
+
+* v1.2.0
+
+## 2026-11-25
+
+* 78b6094 os-core.cpp: set PSPLIM for the running thread
+* f65a7a5 os-inlines.h: set MSPLIM in set_stack_limit()
+* 3541a3f Allow Armv8-M architecture builds
+
+## 2026-11-24
+
+* 88529c5 CODE-REVIEW-1.md: follow-up on the switch timestamp
+
+## 2026-11-23
+
+* c244fa1 os-core.cpp: do not set the switch timestamp again in start()
+* d1d38d0 .npmignore: exclude CLAUDE.md, .claude/ and maintenance/
+* 228dfd0 CODE-REVIEW-1.md: code review of the Cortex-M port
+* 29a7ce7 port: Cortex-M7 r0p1 erratum 837070 workaround (#12)
+* 3b8a92f port: ACLE architecture tests, central check (#11)
+* 3a57a88 os-core.cpp: PendSV_Handler in basic asm (#10)
+* 8905fd7 os-core.cpp: initial MSP from __stack (#9)
+* e6062f2 os-core.cpp: enter the first thread directly (#8)
+* 7c346b2 os-core.cpp: stop if SysTick_Config() fails (#7)
+* b86a78b README.md, port headers: update the documentation
+* e47269d os-inlines.h: is_priority_valid() false for NMI and HardFault (#6)
+* a572be7 os-inlines.h: remove the unmatched diagnostic pop (#5)
+* d5c30e4 os-core.cpp: stack size assertion in bytes (#4)
+* 32662b5 os-core.cpp: no reschedule before the scheduler is started (#3)
+* bcd0100 os-core.cpp: record a reschedule requested while locked (#2)
+* ff9f21b os-inlines.h: hrclock pending tick from SCB->ICSR (#1)
+* ea061a1 rename tests
+* 088ee19 add maintenance
+
 ## 2025-09-24
 
-* v1.1.0
+* 687e975 README update
+* 2da1b0f 1.1.0
+* dbdb387 prepare v1.1.0
 * 901e3d7 set & use Optimise is_reschedule_pending
 
 ## 2025-08-24

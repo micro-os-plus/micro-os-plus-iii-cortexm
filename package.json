@@ -1,13 +1,11 @@
 {
   "name": "@micro-os-plus/micro-os-plus-iii-cortexm",
-  "version": "1.1.0",
+  "version": "1.2.0-pre",
   "description": "A source code library with µOS++ Cortex-M port",
   "main": "",
   "scripts": {
     "npm-install": "npm install",
     "pack": "npm pack",
-    "version-patch": "npm version patch",
-    "version-minor": "npm version minor",
     "postversion": "git push origin --all && git push origin --tags",
     "git-log": "git log --pretty='%cd * %h %s' --date=short"
   },
