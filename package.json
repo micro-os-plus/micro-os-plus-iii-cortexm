@@ -1,6 +1,6 @@
 {
   "name": "@micro-os-plus/micro-os-plus-iii-cortexm",
-  "version": "1.2.0-pre",
+  "version": "1.2.0",
   "description": "A source code library with µOS++ Cortex-M port",
   "main": "",
   "scripts": {
